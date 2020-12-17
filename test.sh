@@ -19,6 +19,7 @@ try() {
 }
 
 try 42 'examples/just_integer.c'
+try 21 'examples/simple_adsub.c'
 echo -e "\e[33mAll Test Passed.\e[0m"
 
 make clean
