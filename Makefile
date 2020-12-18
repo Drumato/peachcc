@@ -1,11 +1,10 @@
-CFLAGS=-std=c11 -g -static -Wall
+CFLAGS=-std=c11 -g -static -Wall -Isrc/include
 SRCS=$(wildcard src/*.c)
 OBJS=$(SRCS:.c=.o)
-	INCLUDE=-Isrc/include
 	CC=/usr/bin/clang
 
 peachcc: $(OBJS)
-	clang -o peachcc $(OBJS) $(LDFLAGS) $(INCLUDE)
+	clang -o peachcc $(OBJS) $(LDFLAGS)
 
 $(OBJS): 
 

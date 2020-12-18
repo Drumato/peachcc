@@ -7,6 +7,10 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "lexer.h"
+#include "parser.h"
+#include "token.h"
+
 int read_file(const char *file_path, char **buf);
 
 int main(int argc, char **argv)
@@ -16,6 +20,7 @@ int main(int argc, char **argv)
         fprintf(stderr, "usage: ./peachcc <file-name>\n");
         exit(1);
     }
+
     const char *file_path = argv[1];
     char *p;
     int status;
@@ -25,34 +30,24 @@ int main(int argc, char **argv)
         exit(1);
     }
 
+    TokenList l;
+    tokenize(&l, p);
+
     printf(".intel_syntax noprefix\n");
     printf(".globl main\n");
     printf("main:\n");
-    printf("  mov rax, %ld\n", strtol(p, &p, 10));
+    printf("  mov rax, %d\n", expect_integer_literal(&l));
 
-    while (*p)
+    while (!at_eof(&l))
     {
-        if (*p == '\n')
+        if (consume(&l, TK_PLUS))
         {
-            p++;
-            continue;
-        }
-        if (*p == '+')
-        {
-            p++;
-            printf("  add rax, %ld\n", strtol(p, &p, 10));
+            printf("  add rax, %d\n", expect_integer_literal(&l));
             continue;
         }
 
-        if (*p == '-')
-        {
-            p++;
-            printf("  sub rax, %ld\n", strtol(p, &p, 10));
-            continue;
-        }
-
-        fprintf(stderr, "unexpected char: '%c'\n", *p);
-        return 1;
+        expect(&l, TK_MINUS);
+        printf("  sub rax, %d\n", expect_integer_literal(&l));
     }
 
     printf("  ret\n");
