@@ -6,12 +6,12 @@ OBJS=$(SRCS:.c=.o)
 peachcc: $(OBJS)
 	clang -o peachcc $(OBJS) $(LDFLAGS)
 
-$(OBJS): 
+$(OBJS):
 
 test: peachcc
 	./test.sh
 
 clean:
-	rm -f peachcc src/*.o *~ tmp*
+	rm -f peachcc src/*.o *~ tmp* asm.s
 
 .PHONY: test clean

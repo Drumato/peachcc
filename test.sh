@@ -4,8 +4,8 @@ try() {
   expected="$1"
   input="$2"
 
-  ./peachcc "$input" > tmp.s
-  gcc -static -o tmp tmp.s
+  ./peachcc "$input"
+  gcc -static -o tmp asm.s
   ./tmp
   actual="$?"
 

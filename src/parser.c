@@ -1,13 +1,17 @@
 #include "parser.h"
+#include "debug.h"
 #include <stdbool.h>
 #include <stdio.h>
+
+// 今のトークンを指すときに使う
+// current_token() 等に渡して使用すること
+Token cur_g;
 
 // 次のトークンが期待している種類のときには，
 // トークンを1つ読み進めて真を返す．それ以外の場合には偽を返す．
 bool consume(TokenList *tokens, TokenKind k)
 {
-    TokenKind cur_kind = current_tk(tokens);
-    if (cur_kind != k)
+    if (current_tk(tokens) != k)
         return false;
 
     eat_token(tokens);
@@ -20,7 +24,8 @@ void expect(TokenList *tokens, TokenKind k)
 {
     if (!consume(tokens, k))
     {
-        fprintf(stderr, "unexpected token\n");
+        current_token(tokens, &cur_g);
+        error_at(cur_g.str, "unexpected token");
         exit(1);
     }
 }
@@ -29,16 +34,16 @@ void expect(TokenList *tokens, TokenKind k)
 // それ以外の場合にはエラーを報告する．
 int expect_integer_literal(TokenList *tokens)
 {
-    Token maybe_intlit;
-    current_token(tokens, &maybe_intlit);
-    if (maybe_intlit.kind != TK_INTEGER)
+    current_token(tokens, &cur_g);
+    if (cur_g.kind != TK_INTEGER)
     {
         fprintf(stderr, "expected integer token\n");
         exit(1);
     }
     eat_token(tokens);
-    return maybe_intlit.value;
+    return cur_g.value;
 }
+
 bool at_eof(TokenList *tokens)
 {
     return current_tk(tokens) == TK_EOF;

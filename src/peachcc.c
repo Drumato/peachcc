@@ -9,6 +9,7 @@
 
 #include "lexer.h"
 #include "parser.h"
+#include "peachcc.h"
 #include "token.h"
 
 int read_file(const char *file_path, char **buf);
@@ -22,35 +23,41 @@ int main(int argc, char **argv)
     }
 
     const char *file_path = argv[1];
-    char *p;
     int status;
-    if ((status = read_file(file_path, &p)) != 0)
+    if ((status = read_file(file_path, &c_program_g)) != 0)
     {
         fprintf(stderr, "read from %s failed.\n", file_path);
         exit(1);
     }
 
     TokenList l;
-    tokenize(&l, p);
+    tokenize(&l, c_program_g);
 
-    printf(".intel_syntax noprefix\n");
-    printf(".globl main\n");
-    printf("main:\n");
-    printf("  mov rax, %d\n", expect_integer_literal(&l));
+    FILE *output_fd;
+    if ((output_fd = fopen("asm.s", "w")) == NULL)
+    {
+        perror("create output_file failed.");
+        exit(1);
+    }
+
+    fprintf(output_fd, ".intel_syntax noprefix\n");
+    fprintf(output_fd, ".globl main\n");
+    fprintf(output_fd, "main:\n");
+    fprintf(output_fd, "  mov rax, %d\n", expect_integer_literal(&l));
 
     while (!at_eof(&l))
     {
         if (consume(&l, TK_PLUS))
         {
-            printf("  add rax, %d\n", expect_integer_literal(&l));
+            fprintf(output_fd, "  add rax, %d\n", expect_integer_literal(&l));
             continue;
         }
 
         expect(&l, TK_MINUS);
-        printf("  sub rax, %d\n", expect_integer_literal(&l));
+        fprintf(output_fd, "  sub rax, %d\n", expect_integer_literal(&l));
     }
 
-    printf("  ret\n");
+    fprintf(output_fd, "  ret\n");
     return 0;
 }
 
