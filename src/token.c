@@ -35,7 +35,7 @@ TokenKind current_tk(TokenList *tokens)
 }
 
 // トークンを読みすすめる
-void eat_token(TokenList *tokens)
+void progress(TokenList *tokens)
 {
     tokens->pos++;
 }

@@ -3,6 +3,7 @@
 #include <ctype.h>
 #include <stdio.h>
 
+#include <string.h>
 static TokenKind char_to_operator(char op);
 
 void tokenize(TokenList *tokens, char *p)
@@ -18,7 +19,7 @@ void tokenize(TokenList *tokens, char *p)
             continue;
         }
 
-        if (*p == '+' || *p == '-')
+        if (strchr("+-*/()", *p) != NULL)
         {
             TokenKind op = char_to_operator(*p);
             push_token(tokens, new_token(op, p++));
@@ -47,6 +48,14 @@ static TokenKind char_to_operator(char op)
         return TK_PLUS;
     case '-':
         return TK_MINUS;
+    case '*':
+        return TK_STAR;
+    case '/':
+        return TK_SLASH;
+    case '(':
+        return TK_LPAREN;
+    case ')':
+        return TK_RPAREN;
     default:
         return TK_EOF;
     }

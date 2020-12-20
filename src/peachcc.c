@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "codegen.h"
 #include "lexer.h"
 #include "parser.h"
 #include "peachcc.h"
@@ -30,34 +31,18 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    TokenList l;
-    tokenize(&l, c_program_g);
+    TokenList tokens;
+    tokenize(&tokens, c_program_g);
+    Expr *e = parse(&tokens);
 
-    FILE *output_fd;
-    if ((output_fd = fopen("asm.s", "w")) == NULL)
+    FILE *output_file;
+    if ((output_file = fopen("asm.s", "w")) == NULL)
     {
         perror("create output_file failed.");
         exit(1);
     }
 
-    fprintf(output_fd, ".intel_syntax noprefix\n");
-    fprintf(output_fd, ".globl main\n");
-    fprintf(output_fd, "main:\n");
-    fprintf(output_fd, "  mov rax, %d\n", expect_integer_literal(&l));
-
-    while (!at_eof(&l))
-    {
-        if (consume(&l, TK_PLUS))
-        {
-            fprintf(output_fd, "  add rax, %d\n", expect_integer_literal(&l));
-            continue;
-        }
-
-        expect(&l, TK_MINUS);
-        fprintf(output_fd, "  sub rax, %d\n", expect_integer_literal(&l));
-    }
-
-    fprintf(output_fd, "  ret\n");
+    codegen(output_file, e);
     return 0;
 }
 

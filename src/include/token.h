@@ -4,13 +4,18 @@
 #include "array_stack.h"
 
 // Tokenの種類
-typedef enum
+enum TokenKind
 {
-    TK_PLUS,    // +
-    TK_MINUS,   // -
+    TK_PLUS,    // `+`
+    TK_MINUS,   // `-`
+    TK_STAR,    // `*`
+    TK_SLASH,   // `/`
+    TK_LPAREN,  // `(`
+    TK_RPAREN,  // `)`
     TK_INTEGER, // 整数
     TK_EOF,     // 入力の終わり
-} TokenKind;
+};
+typedef enum TokenKind TokenKind;
 
 typedef struct Token Token;
 
@@ -37,5 +42,5 @@ void current_token(TokenList *tokens, Token *cur);
 // リスト中のposが指す現在のトークンの種類を見る
 TokenKind current_tk(TokenList *tokens);
 // トークンを読みすすめる
-void eat_token(TokenList *tokens);
+void progress(TokenList *tokens);
 #endif
