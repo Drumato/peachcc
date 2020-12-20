@@ -13,11 +13,11 @@ static bool eatable(TokenList *tokens, TokenKind k);
 static bool try_eat(TokenList *tokens, TokenKind k);
 static void expect(TokenList *tokens, TokenKind k);
 static int expect_integer_literal(TokenList *tokens);
-static bool at_eof(TokenList *tokens);
 
 // expr parsers;
 static Expr *expr(TokenList *tokens);
 static Expr *multiplication(TokenList *tokens);
+static Expr *prefix_unary(TokenList *tokens);
 static Expr *primary(TokenList *tokens);
 
 // expr
@@ -26,8 +26,6 @@ Expr *parse(TokenList *tokens)
     cur_g = calloc(1, sizeof(Token));
     current_token(tokens, cur_g);
     Expr *e = expr(tokens);
-
-    assert(at_eof(tokens));
     free(cur_g);
     return e;
 }
@@ -51,17 +49,37 @@ static Expr *expr(TokenList *tokens)
 // primary ('*' primary | '/' primary)*
 static Expr *multiplication(TokenList *tokens)
 {
-    Expr *e = primary(tokens);
+    Expr *e = prefix_unary(tokens);
 
     for (;;)
     {
         if (try_eat(tokens, TK_STAR))
-            e = new_binop(EX_MUL, e, primary(tokens), cur_g);
+        {
+            e = new_binop(EX_MUL, e, prefix_unary(tokens), cur_g);
+        }
         else if (try_eat(tokens, TK_SLASH))
-            e = new_binop(EX_DIV, e, primary(tokens), cur_g);
+        {
+            e = new_binop(EX_DIV, e, prefix_unary(tokens), cur_g);
+        }
         else
+        {
             return e;
+        }
     }
+}
+
+// ('+' | '-')? primary
+static Expr *prefix_unary(TokenList *tokens)
+{
+    Expr *e;
+
+    if (try_eat(tokens, TK_PLUS))
+        e = new_unop(EX_UNARY_PLUS, primary(tokens), cur_g);
+    else if (try_eat(tokens, TK_MINUS))
+        e = new_unop(EX_UNARY_MINUS, primary(tokens), cur_g);
+    else
+        e = primary(tokens);
+    return e;
 }
 
 // paren-expr | integer-literal
@@ -115,12 +133,6 @@ static int expect_integer_literal(TokenList *tokens)
     progress(tokens);
     current_token(tokens, cur_g);
     return value;
-}
-
-// トークン列の終端かチェック
-static bool at_eof(TokenList *tokens)
-{
-    return eatable(tokens, TK_EOF);
 }
 
 // 現在見ているトークンが渡されたkと同じ種類かチェック

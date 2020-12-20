@@ -11,6 +11,14 @@ Expr *new_binop(ExprKind op, Expr *lhs, Expr *rhs, Token *tok)
     e->rhs = rhs;
     return e;
 }
+
+Expr *new_unop(ExprKind op, Expr *child_expr, Token *tok)
+{
+    Expr *e = new_expr(op, tok);
+    e->unary_op = child_expr;
+    return e;
+}
+
 Expr *new_integer(int value, Token *tok)
 {
     Expr *e = new_expr(EX_INTEGER, tok);

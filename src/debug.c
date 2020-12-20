@@ -1,11 +1,13 @@
 #include "debug.h"
 #include "peachcc.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 void error_at(char *loc, char *fmt, ...)
 {
+    assert(loc);
     va_list ap;
     va_start(ap, fmt);
 

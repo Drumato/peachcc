@@ -23,6 +23,7 @@ try 21 'examples/simple_adsub.c'
 try 19 'examples/with_whitespace.c'
 try 2 'examples/four_arithmetic.c'
 try 12 'examples/paren_expr.c'
+try 19 'examples/unary_expr.c'
 echo -e "\e[33mAll Test Passed.\e[0m"
 
 make clean
