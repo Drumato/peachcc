@@ -23,7 +23,7 @@ typedef struct Expr Expr;
 // 式を表すASTノードの型
 struct Expr
 {
-    Token *tok;    // エラー出力用．
+    char *str;     // 変数名やデバッグで使用
     ExprKind kind; // 式の型
     Expr *lhs;     // 左辺(2つのオペランドを取るノードで使用)
     Expr *rhs;     // 右辺(2つのオペランドを取るノードで使用)
@@ -32,6 +32,6 @@ struct Expr
     int value;      // kindがND_INTEGERの場合のみ使う
 };
 
-Expr *new_unop(ExprKind op, Expr *child_expr, Token *tok);
-Expr *new_binop(ExprKind op, Expr *lhs, Expr *rhs, Token *tok);
-Expr *new_integer(int value, Token *tok);
+Expr *new_unop(ExprKind op, Expr *child_expr, char *str);
+Expr *new_binop(ExprKind op, Expr *lhs, Expr *rhs, char *str);
+Expr *new_integer(int value, char *str);

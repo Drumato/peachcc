@@ -29,7 +29,6 @@ void codegen(FILE *output_file, Expr *expr)
 static void gen_expr(Expr *expr)
 {
     assert(expr);
-    assert(expr->tok);
     switch (expr->kind)
     {
     case EX_INTEGER:
@@ -54,7 +53,7 @@ static void gen_expr(Expr *expr)
         gen_binop_expr(expr);
         break;
     default:
-        error_at(expr->tok->str, "cannot codegen from it");
+        error_at(expr->str, "cannot codegen from it");
         break;
     }
 }
@@ -104,7 +103,7 @@ static void gen_binop_expr(Expr *expr)
         gen_compare_rax_and_rdi_by("setle");
         break;
     default:
-        error_at(expr->tok->str, "It's not a binary operation");
+        error_at(expr->str, "It's not a binary operation");
         break;
     }
 
@@ -127,7 +126,7 @@ static void gen_unary_op_expr(Expr *expr)
         out_newline("  neg rax");
         break;
     default:
-        error_at(expr->tok->str, "It's not a unary operation");
+        error_at(expr->str, "It's not a unary operation");
         break;
     }
     out_newline("  push rax");

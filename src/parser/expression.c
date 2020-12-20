@@ -5,9 +5,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-// 今のトークンを指すときに使う
-// current_token() 等に渡して使用すること
-
 static bool eatable(TokenList *tokens, TokenKind k);
 static bool try_eat(TokenList *tokens, TokenKind k);
 static void expect(TokenList *tokens, TokenKind k);
@@ -39,12 +36,12 @@ static Expr *equality(TokenList *tokens)
         // `==`
         if (try_eat(tokens, TK_EQ))
         {
-            e = new_binop(EX_EQ, e, relation(tokens), cur_g);
+            e = new_binop(EX_EQ, e, relation(tokens), cur_g->str);
         }
         // `!=`
         else if (try_eat(tokens, TK_NTEQ))
         {
-            e = new_binop(EX_NTEQ, e, relation(tokens), cur_g);
+            e = new_binop(EX_NTEQ, e, relation(tokens), cur_g->str);
         }
         else
         {
@@ -65,22 +62,22 @@ static Expr *relation(TokenList *tokens)
         // `<`
         if (try_eat(tokens, TK_LE))
         {
-            e = new_binop(EX_LE, e, addition(tokens), cur_g);
+            e = new_binop(EX_LE, e, addition(tokens), cur_g->str);
         }
         // `<=`
         else if (try_eat(tokens, TK_LEEQ))
         {
-            e = new_binop(EX_LEEQ, e, addition(tokens), cur_g);
+            e = new_binop(EX_LEEQ, e, addition(tokens), cur_g->str);
         }
         // `>`
         else if (try_eat(tokens, TK_GE))
         {
-            e = new_binop(EX_GE, e, addition(tokens), cur_g);
+            e = new_binop(EX_GE, e, addition(tokens), cur_g->str);
         }
         // `>=`
         else if (try_eat(tokens, TK_GEEQ))
         {
-            e = new_binop(EX_GEEQ, e, addition(tokens), cur_g);
+            e = new_binop(EX_GEEQ, e, addition(tokens), cur_g->str);
         }
         else
         {
@@ -100,12 +97,12 @@ static Expr *addition(TokenList *tokens)
         // `+`
         if (try_eat(tokens, TK_PLUS))
         {
-            e = new_binop(EX_ADD, e, multiplication(tokens), cur_g);
+            e = new_binop(EX_ADD, e, multiplication(tokens), cur_g->str);
         }
         // `-`
         else if (try_eat(tokens, TK_MINUS))
         {
-            e = new_binop(EX_SUB, e, multiplication(tokens), cur_g);
+            e = new_binop(EX_SUB, e, multiplication(tokens), cur_g->str);
         }
         else
         {
@@ -126,12 +123,12 @@ static Expr *multiplication(TokenList *tokens)
         // `*`
         if (try_eat(tokens, TK_STAR))
         {
-            e = new_binop(EX_MUL, e, prefix_unary(tokens), cur_g);
+            e = new_binop(EX_MUL, e, prefix_unary(tokens), cur_g->str);
         }
         // `/`
         else if (try_eat(tokens, TK_SLASH))
         {
-            e = new_binop(EX_DIV, e, prefix_unary(tokens), cur_g);
+            e = new_binop(EX_DIV, e, prefix_unary(tokens), cur_g->str);
         }
         else
         {
@@ -148,9 +145,9 @@ static Expr *prefix_unary(TokenList *tokens)
     Expr *e;
 
     if (try_eat(tokens, TK_PLUS))
-        e = new_unop(EX_UNARY_PLUS, prefix_unary(tokens), cur_g);
+        e = new_unop(EX_UNARY_PLUS, prefix_unary(tokens), cur_g->str);
     else if (try_eat(tokens, TK_MINUS))
-        e = new_unop(EX_UNARY_MINUS, prefix_unary(tokens), cur_g);
+        e = new_unop(EX_UNARY_MINUS, prefix_unary(tokens), cur_g->str);
     else
         e = primary(tokens);
     return e;
@@ -163,8 +160,9 @@ static Expr *primary(TokenList *tokens)
     {
         return paren_expr(tokens);
     }
-
-    return new_integer(expect_integer_literal(tokens), cur_g);
+    Token *intlit = cur_g;
+    int value = expect_integer_literal(tokens);
+    return new_integer(value, intlit->str);
 }
 
 // '(' expr ')'

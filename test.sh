@@ -5,10 +5,13 @@ assert() {
   expected="$1"
   input="$2"
 
+  # テストケースを書き込むファイルの作成
   tmp_c_file=$(mktemp)
-  echo $input > tmp_c_file
+  echo $input > $tmp_c_file
 
-  ./peachcc tmp_c_file
+  # コンパイル & 実行
+  # 終了ステータスをもらう
+  ./peachcc -i $tmp_c_file -o asm.s
   gcc -static -o tmp asm.s
   ./tmp
   actual="$?"

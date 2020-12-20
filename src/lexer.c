@@ -15,6 +15,10 @@ void tokenize(TokenList *tokens, char *p)
 
     while (*p)
     {
+
+        // if文の順番を必ず保持すること．
+        // 順番を変更すると正しくtokenize出来ない
+
         // 空白文字をスキップ
         if (isspace(*p))
         {
@@ -22,6 +26,8 @@ void tokenize(TokenList *tokens, char *p)
             continue;
         }
 
+        // 先に二文字以上の記号をtokenize可能かチェックすることで，
+        // 一文字の記号のtokinizeがstrchr()で簡略化できる．
         Token *t;
         if ((t = multilength_symbol(&p)) != NULL)
         {
@@ -38,7 +44,9 @@ void tokenize(TokenList *tokens, char *p)
 
         if (isdigit(*p))
         {
-            Token *intlit = new_integer_token(p, strtol(p, &p, 10));
+            char *int_str = p;
+            int value = strtol(p, &p, 10);
+            Token *intlit = new_integer_token(int_str, value);
             push_token(tokens, intlit);
             continue;
         }
@@ -55,6 +63,8 @@ static Token *multilength_symbol(char **ptr)
     char *symbols[] = {"==", "!=", "<=", ">=", NULL};
     TokenKind kinds[] = {TK_EQ, TK_NTEQ, TK_LEEQ, TK_GEEQ};
 
+    // 必ずsymbols[i] != NULLと比較すること．
+    // kindsとsymbolsには要素数の差がある(len(symbols == len(kinds) - 1))
     for (int i = 0; symbols[i] != NULL; i++)
     {
         if (!strncmp(*ptr, symbols[i], strlen(symbols[i])))

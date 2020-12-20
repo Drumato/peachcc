@@ -14,6 +14,6 @@ test: peachcc
 	./test.sh
 
 clean:
-	rm -f peachcc src/*.o src/parser/*.o src/ast/*.o *~ tmp* asm.s
+	rm -f peachcc src/*.o src/parser/*.o src/ast/*.o *~ tmp* *.s
 
 .PHONY: test clean

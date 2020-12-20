@@ -6,9 +6,9 @@
 // expr
 Expr *parse(TokenList *tokens)
 {
+    // 各ASTノードがトークンへのポインタを持っているので，cur_gのfreeは最後までしてはならない．
     cur_g = calloc(1, sizeof(Token));
     current_token(tokens, cur_g);
     Expr *e = expr(tokens);
-    free(cur_g);
     return e;
 }
