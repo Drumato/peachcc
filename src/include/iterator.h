@@ -3,9 +3,7 @@
  * Author(s)    : Tekin Ozbek <tekin@tekinozbek.com>
  ******************************************************************************/
 
-#ifndef PEACHCC_ITERATOR_H_
-#define PEACHCC_ITERATOR_H_
-
+#pragma once
 typedef struct iterator_t
 {
 
@@ -42,5 +40,3 @@ typedef struct iterator_t
     void *istruct;
 
 } iterator_t;
-
-#endif

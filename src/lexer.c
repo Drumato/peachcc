@@ -1,10 +1,13 @@
 #include "lexer.h"
+#include "debug.h"
 #include "token.h"
 #include <ctype.h>
+#include <stddef.h>
 #include <stdio.h>
 
 #include <string.h>
 static TokenKind char_to_operator(char op);
+static Token *multilength_symbol(char **ptr);
 
 void tokenize(TokenList *tokens, char *p)
 {
@@ -19,7 +22,14 @@ void tokenize(TokenList *tokens, char *p)
             continue;
         }
 
-        if (strchr("+-*/()", *p) != NULL)
+        Token *t;
+        if ((t = multilength_symbol(&p)) != NULL)
+        {
+            push_token(tokens, t);
+            continue;
+        }
+
+        if (strchr("+-*/()<>", *p) != NULL)
         {
             TokenKind op = char_to_operator(*p);
             push_token(tokens, new_token(op, p++));
@@ -33,11 +43,29 @@ void tokenize(TokenList *tokens, char *p)
             continue;
         }
 
-        fprintf(stderr, "can't tokenize\n");
+        error_at(p, "can't tokenize");
     }
 
     push_token(tokens, new_token(TK_EOF, p));
     return;
+}
+
+static Token *multilength_symbol(char **ptr)
+{
+    char *symbols[] = {"==", "!=", "<=", ">=", NULL};
+    TokenKind kinds[] = {TK_EQ, TK_NTEQ, TK_LEEQ, TK_GEEQ};
+
+    for (int i = 0; symbols[i] != NULL; i++)
+    {
+        if (!strncmp(*ptr, symbols[i], strlen(symbols[i])))
+        {
+            char *p = *ptr;
+            (*ptr) += 2;
+            return new_token(kinds[i], p);
+        }
+    }
+
+    return NULL;
 }
 
 static TokenKind char_to_operator(char op)
@@ -56,6 +84,10 @@ static TokenKind char_to_operator(char op)
         return TK_LPAREN;
     case ')':
         return TK_RPAREN;
+    case '<':
+        return TK_LE;
+    case '>':
+        return TK_GE;
     default:
         return TK_EOF;
     }

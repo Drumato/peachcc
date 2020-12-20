@@ -1,13 +1,12 @@
-#include "parser.h"
-#include "ast.h"
+#include "ast/expr.h"
 #include "debug.h"
+#include "peachcc.h"
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 
 // 今のトークンを指すときに使う
 // current_token() 等に渡して使用すること
-Token *cur_g;
 
 static bool eatable(TokenList *tokens, TokenKind k);
 static bool try_eat(TokenList *tokens, TokenKind k);
@@ -15,68 +14,143 @@ static void expect(TokenList *tokens, TokenKind k);
 static int expect_integer_literal(TokenList *tokens);
 
 // expr parsers;
-static Expr *expr(TokenList *tokens);
+Expr *expr(TokenList *tokens);
+static Expr *equality(TokenList *tokens);
+static Expr *relation(TokenList *tokens);
+static Expr *addition(TokenList *tokens);
 static Expr *multiplication(TokenList *tokens);
 static Expr *prefix_unary(TokenList *tokens);
 static Expr *primary(TokenList *tokens);
+static Expr *paren_expr(TokenList *tokens);
 
-// expr
-Expr *parse(TokenList *tokens)
+// equality
+Expr *expr(TokenList *tokens)
 {
-    cur_g = calloc(1, sizeof(Token));
-    current_token(tokens, cur_g);
-    Expr *e = expr(tokens);
-    free(cur_g);
+    return equality(tokens);
+}
+
+// relation ('==' relation | '!=' relation)*
+static Expr *equality(TokenList *tokens)
+{
+    Expr *e = relation(tokens);
+
+    for (;;)
+    {
+        // `==`
+        if (try_eat(tokens, TK_EQ))
+        {
+            e = new_binop(EX_EQ, e, relation(tokens), cur_g);
+        }
+        // `!=`
+        else if (try_eat(tokens, TK_NTEQ))
+        {
+            e = new_binop(EX_NTEQ, e, relation(tokens), cur_g);
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    return e;
+}
+
+// addition ('<' addition | '<=' addition | '>' addition | '>=' addition)*
+static Expr *relation(TokenList *tokens)
+{
+    Expr *e = addition(tokens);
+
+    for (;;)
+    {
+        // `<`
+        if (try_eat(tokens, TK_LE))
+        {
+            e = new_binop(EX_LE, e, addition(tokens), cur_g);
+        }
+        // `<=`
+        else if (try_eat(tokens, TK_LEEQ))
+        {
+            e = new_binop(EX_LEEQ, e, addition(tokens), cur_g);
+        }
+        // `>`
+        else if (try_eat(tokens, TK_GE))
+        {
+            e = new_binop(EX_GE, e, addition(tokens), cur_g);
+        }
+        // `>=`
+        else if (try_eat(tokens, TK_GEEQ))
+        {
+            e = new_binop(EX_GEEQ, e, addition(tokens), cur_g);
+        }
+        else
+        {
+            break;
+        }
+    }
     return e;
 }
 
 // multiplication ('+' multiplication | '-' multiplication)*
-static Expr *expr(TokenList *tokens)
+static Expr *addition(TokenList *tokens)
 {
     Expr *e = multiplication(tokens);
 
     for (;;)
     {
+        // `+`
         if (try_eat(tokens, TK_PLUS))
+        {
             e = new_binop(EX_ADD, e, multiplication(tokens), cur_g);
+        }
+        // `-`
         else if (try_eat(tokens, TK_MINUS))
+        {
             e = new_binop(EX_SUB, e, multiplication(tokens), cur_g);
+        }
         else
-            return e;
+        {
+            break;
+        }
     }
+
+    return e;
 }
 
-// primary ('*' primary | '/' primary)*
+// prefix_unary ('*' prefix_unary | '/' prefix_unary)*
 static Expr *multiplication(TokenList *tokens)
 {
     Expr *e = prefix_unary(tokens);
 
     for (;;)
     {
+        // `*`
         if (try_eat(tokens, TK_STAR))
         {
             e = new_binop(EX_MUL, e, prefix_unary(tokens), cur_g);
         }
+        // `/`
         else if (try_eat(tokens, TK_SLASH))
         {
             e = new_binop(EX_DIV, e, prefix_unary(tokens), cur_g);
         }
         else
         {
-            return e;
+            break;
         }
     }
+
+    return e;
 }
 
-// ('+' | '-')? primary
+// ('+' | '-')? prefix_unary
 static Expr *prefix_unary(TokenList *tokens)
 {
     Expr *e;
 
     if (try_eat(tokens, TK_PLUS))
-        e = new_unop(EX_UNARY_PLUS, primary(tokens), cur_g);
+        e = new_unop(EX_UNARY_PLUS, prefix_unary(tokens), cur_g);
     else if (try_eat(tokens, TK_MINUS))
-        e = new_unop(EX_UNARY_MINUS, primary(tokens), cur_g);
+        e = new_unop(EX_UNARY_MINUS, prefix_unary(tokens), cur_g);
     else
         e = primary(tokens);
     return e;
@@ -85,14 +159,22 @@ static Expr *prefix_unary(TokenList *tokens)
 // paren-expr | integer-literal
 static Expr *primary(TokenList *tokens)
 {
-    if (try_eat(tokens, TK_LPAREN))
+    if (eatable(tokens, TK_LPAREN))
     {
-        Expr *e = expr(tokens);
-        expect(tokens, TK_RPAREN);
-        return e;
+        return paren_expr(tokens);
     }
 
     return new_integer(expect_integer_literal(tokens), cur_g);
+}
+
+// '(' expr ')'
+static Expr *paren_expr(TokenList *tokens)
+{
+    expect(tokens, TK_LPAREN);
+    Expr *e = expr(tokens);
+    expect(tokens, TK_RPAREN);
+
+    return e;
 }
 
 // 次のトークンが期待している種類のときには，

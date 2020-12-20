@@ -3,8 +3,7 @@
  * Author(s)    : Tekin Ozbek <tekin@tekinozbek.com>
  ******************************************************************************/
 
-#ifndef PEACHCC_ARRAYSTACK_H_
-#define PEACHCC_ARRAYSTACK_H_
+#pragma once
 
 #include <stdlib.h>
 
@@ -226,5 +225,3 @@ extern void arraystack_set(arraystack_t *s,
 extern void arraystack_truncate(arraystack_t *s,
                                 size_t pos,
                                 size_t num_elems);
-
-#endif

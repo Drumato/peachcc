@@ -1,5 +1,4 @@
-#ifndef PEACHCC_TOKEN_H
-#define PEACHCC_TOKEN_H
+#pragma once
 
 #include "array_stack.h"
 
@@ -12,6 +11,12 @@ enum TokenKind
     TK_SLASH,   // `/`
     TK_LPAREN,  // `(`
     TK_RPAREN,  // `)`
+    TK_LE,      // `<`
+    TK_GE,      // `>`
+    TK_LEEQ,    // `<=`
+    TK_GEEQ,    // `>=`
+    TK_EQ,      // `==`
+    TK_NTEQ,    // `!=`
     TK_INTEGER, // 整数
     TK_EOF,     // 入力の終わり
 };
@@ -43,4 +48,3 @@ void current_token(TokenList *tokens, Token *cur);
 TokenKind current_tk(TokenList *tokens);
 // トークンを読みすすめる
 void progress(TokenList *tokens);
-#endif

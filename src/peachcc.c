@@ -9,7 +9,7 @@
 
 #include "codegen.h"
 #include "lexer.h"
-#include "parser.h"
+#include "parser/toplevel.h"
 #include "peachcc.h"
 #include "token.h"
 

@@ -1,6 +1,4 @@
-#ifndef PEACHCC_AST_H_
-#define PEACHCC_AST_H_
-
+#pragma once
 #include "token.h"
 
 typedef enum
@@ -9,6 +7,12 @@ typedef enum
     EX_SUB,         // 減算
     EX_MUL,         // 乗算
     EX_DIV,         // 除算
+    EX_LE,          // `lhs < rhs`
+    EX_GE,          // `lhs > rhs`
+    EX_LEEQ,        // `lhs <= rhs`
+    EX_GEEQ,        // `lhs >= rhs`
+    EX_EQ,          // `lhs == rhs`
+    EX_NTEQ,        // `lhs != rhs`
     EX_UNARY_PLUS,  // 単項+
     EX_UNARY_MINUS, // 単項-
     EX_INTEGER,     // 整数リテラル
@@ -31,5 +35,3 @@ struct Expr
 Expr *new_unop(ExprKind op, Expr *child_expr, Token *tok);
 Expr *new_binop(ExprKind op, Expr *lhs, Expr *rhs, Token *tok);
 Expr *new_integer(int value, Token *tok);
-
-#endif

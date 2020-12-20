@@ -59,3 +59,4 @@ GRTAGS
 GPATH
 *core*
 *.s
+peachcc
