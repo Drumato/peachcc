@@ -1,18 +1,10 @@
-#include "lexer.h"
-#include "debug.h"
-#include "token.h"
-#include <ctype.h>
-#include <stddef.h>
-#include <stdio.h>
 
-#include <string.h>
+#include "peachcc.h"
 static TokenKind char_to_operator(char op);
 static Token *multilength_symbol(char **ptr);
 
 void tokenize(TokenList *tokens, char *p)
 {
-    arraystack_init(tokens, sizeof(Token));
-
     while (*p)
     {
 
@@ -26,6 +18,13 @@ void tokenize(TokenList *tokens, char *p)
             continue;
         }
 
+        if (isalpha(*p))
+        {
+            Token *id = new_identifier_token(p++, 1);
+            push_token(tokens, id);
+            continue;
+        }
+
         // 先に二文字以上の記号をtokenize可能かチェックすることで，
         // 一文字の記号のtokinizeがstrchr()で簡略化できる．
         Token *t;
@@ -35,7 +34,7 @@ void tokenize(TokenList *tokens, char *p)
             continue;
         }
 
-        if (strchr("+-*/()<>", *p) != NULL)
+        if (strchr("+-*/()<>;=", *p) != NULL)
         {
             TokenKind op = char_to_operator(*p);
             push_token(tokens, new_token(op, p++));
@@ -98,6 +97,10 @@ static TokenKind char_to_operator(char op)
         return TK_LE;
     case '>':
         return TK_GE;
+    case ';':
+        return TK_SEMICOLON;
+    case '=':
+        return TK_ASSIGN;
     default:
         return TK_EOF;
     }

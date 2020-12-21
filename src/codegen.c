@@ -1,18 +1,20 @@
-#include "codegen.h"
-#include "debug.h"
-#include <assert.h>
-
-#include <stdio.h>
+#include "peachcc.h"
 
 FILE *output_file_g;
 
+static void gen_stmt(Stmt *stmt);
+
+static void gen_function_prologue(int stack_size);
+static void gen_function_epilogue(void);
+static void gen_lvalue(Expr *expr);
 static void gen_expr(Expr *expr);
 static void gen_binop_expr(Expr *expr);
 static void gen_unary_op_expr(Expr *expr);
 static void gen_compare_rax_and_rdi_by(char *mode);
 static void out_newline(char *fmt, ...);
+static void gen_dereference_by_popping_stack(void);
 
-void codegen(FILE *output_file, Expr *expr)
+void codegen(FILE *output_file, Program *program)
 {
     output_file_g = output_file;
 
@@ -20,10 +22,29 @@ void codegen(FILE *output_file, Expr *expr)
     out_newline(".globl main");
     out_newline("main:");
 
-    gen_expr(expr);
+    // 現在は決め打ちでスタックをアロケーション
+    gen_function_prologue(208);
 
-    out_newline("  pop rax");
-    out_newline("  ret");
+    for (size_t i = 0; i < program->stmts->len; i++)
+    {
+        Stmt *s = (Stmt *)program->stmts->data[i];
+        gen_stmt(s);
+    }
+    gen_function_epilogue();
+}
+
+static void gen_stmt(Stmt *stmt)
+{
+    switch (stmt->kind)
+    {
+    case ST_EXPR:
+        gen_expr(stmt->expr);
+        out_newline("  pop rax");
+        break;
+    default:
+        error_at(stmt->loc, "cannot codegen from it");
+        break;
+    }
 }
 
 static void gen_expr(Expr *expr)
@@ -33,6 +54,11 @@ static void gen_expr(Expr *expr)
     {
     case EX_INTEGER:
         out_newline("  push %d", expr->value);
+        break;
+    case EX_LOCAL_VAR:
+        // gen_lvalue でアドレスをプッシュするだけでは変数式にならない
+        gen_lvalue(expr);
+        gen_dereference_by_popping_stack();
         break;
     case EX_UNARY_PLUS:
         gen_unary_op_expr(expr);
@@ -52,10 +78,35 @@ static void gen_expr(Expr *expr)
     case EX_GEEQ:
         gen_binop_expr(expr);
         break;
+    case EX_ASSIGN:
+        // top < [変数に格納する値, 変数のアドレス] < bottom というようにコード生成
+        gen_lvalue(expr->lhs);
+        gen_expr(expr->rhs);
+
+        out_newline("  pop rdi");
+        out_newline("  pop rax");
+        out_newline("  mov [rax], rdi");
+
+        // 代入式なので，値を生成する必要がある
+        out_newline("  push rdi");
+        break;
     default:
         error_at(expr->str, "cannot codegen from it");
         break;
     }
+}
+
+static void gen_lvalue(Expr *expr)
+{
+    if (expr->kind != EX_LOCAL_VAR)
+        error_at(expr->str, "It's not a variable in assignment");
+
+    out_newline("  mov rax, rbp");
+
+    // 変数のスタックオフセットを計算
+    int offset = (expr->str[0] - 'a' + 1) * 8;
+    out_newline("  sub rax, %d", offset);
+    out_newline("  push rax");
 }
 
 static void gen_binop_expr(Expr *expr)
@@ -132,6 +183,21 @@ static void gen_unary_op_expr(Expr *expr)
     out_newline("  push rax");
 }
 
+// 関数プロローグの生成
+static void gen_function_prologue(int stack_size)
+{
+    out_newline("  push rbp");
+    out_newline("  mov rbp, rsp");
+    out_newline("  sub rsp, %d", stack_size);
+}
+// 関数エピローグの生成
+static void gen_function_epilogue(void)
+{
+    out_newline("  mov rsp, rbp");
+    out_newline("  pop rbp");
+    out_newline("  ret");
+}
+
 // raxとrdiを比較し，渡されたモードでalにフラグを立てる．
 // 最終的にraxに符号拡張して返す
 static void gen_compare_rax_and_rdi_by(char *mode)
@@ -139,6 +205,15 @@ static void gen_compare_rax_and_rdi_by(char *mode)
     out_newline("  cmp rax, rdi");
     out_newline("  %s al", mode);
     out_newline("  movzb rax, al");
+}
+
+// スタックのトップに積んであるアドレスを，
+// そのアドレスが指す値に置き換える
+static void gen_dereference_by_popping_stack(void)
+{
+    out_newline("  pop rax");
+    out_newline("  mov rax, [rax]");
+    out_newline("  push rax");
 }
 // output_file_gに文字列を改行付きで書き込む
 static void out_newline(char *fmt, ...)

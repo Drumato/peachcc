@@ -1,17 +1,9 @@
-#include "ast/expr.h"
-#include "debug.h"
-#include "peachcc.h"
-#include <assert.h>
-#include <stdbool.h>
-#include <stdio.h>
 
-static bool eatable(TokenList *tokens, TokenKind k);
-static bool try_eat(TokenList *tokens, TokenKind k);
-static void expect(TokenList *tokens, TokenKind k);
-static int expect_integer_literal(TokenList *tokens);
+#include "peachcc.h"
 
 // expr parsers;
 Expr *expr(TokenList *tokens);
+static Expr *assign(TokenList *tokens);
 static Expr *equality(TokenList *tokens);
 static Expr *relation(TokenList *tokens);
 static Expr *addition(TokenList *tokens);
@@ -20,10 +12,23 @@ static Expr *prefix_unary(TokenList *tokens);
 static Expr *primary(TokenList *tokens);
 static Expr *paren_expr(TokenList *tokens);
 
-// equality
+// assign
 Expr *expr(TokenList *tokens)
 {
-    return equality(tokens);
+    return assign(tokens);
+}
+
+// equality ("=" assign)?
+static Expr *assign(TokenList *tokens)
+{
+    Expr *e = equality(tokens);
+    if (try_eat(tokens, TK_ASSIGN))
+    {
+        char *assign_loc = cur_g->str;
+        e = new_binop(EX_ASSIGN, e, assign(tokens), assign_loc);
+    }
+
+    return e;
 }
 
 // relation ('==' relation | '!=' relation)*
@@ -160,9 +165,16 @@ static Expr *primary(TokenList *tokens)
     {
         return paren_expr(tokens);
     }
-    Token *intlit = cur_g;
+
+    Token *ident_loc;
+    if ((ident_loc = try_eat_identifier(tokens)) != NULL)
+    {
+        return new_identifier(ident_loc->str, ident_loc->length);
+    }
+
+    char *loc = cur_g->str;
     int value = expect_integer_literal(tokens);
-    return new_integer(value, intlit->str);
+    return new_integer(value, loc);
 }
 
 // '(' expr ')'
@@ -173,50 +185,4 @@ static Expr *paren_expr(TokenList *tokens)
     expect(tokens, TK_RPAREN);
 
     return e;
-}
-
-// 次のトークンが期待している種類のときには，
-// トークンを1つ読み進めて真を返す．
-// 読み進められなかった時は偽を返す．
-static bool try_eat(TokenList *tokens, TokenKind k)
-{
-    if (current_tk(tokens) != k)
-        return false;
-
-    progress(tokens);
-    current_token(tokens, cur_g);
-    return true;
-}
-
-// 次のトークンが期待している記号のときには，トークンを1つ読み進める．
-// それ以外の場合にはエラーを報告する．
-static void expect(TokenList *tokens, TokenKind k)
-{
-    if (!try_eat(tokens, k))
-    {
-        error_at(cur_g->str, "unexpected token");
-        exit(1);
-    }
-    current_token(tokens, cur_g);
-}
-
-// 次のトークンが整数の場合，トークンを1つ読み進めてその数値を返す．
-// それ以外の場合にはエラーを報告する．
-static int expect_integer_literal(TokenList *tokens)
-{
-    if (cur_g->kind != TK_INTEGER)
-    {
-        fprintf(stderr, "expected integer token\n");
-        exit(1);
-    }
-    int value = cur_g->value;
-    progress(tokens);
-    current_token(tokens, cur_g);
-    return value;
-}
-
-// 現在見ているトークンが渡されたkと同じ種類かチェック
-static bool eatable(TokenList *tokens, TokenKind k)
-{
-    return current_tk(tokens) == k;
 }

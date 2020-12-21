@@ -1,6 +1,6 @@
 SRC_DIR ?= ./src
 
-CFLAGS=-std=c11 -g -static -Wall -Isrc/include -Isrc/include
+CFLAGS=-std=c11 -g -static -Wall -Isrc/include
 SRCS := $(shell find $(SRC_DIR) -name '*.c')
 OBJS=$(SRCS:.c=.o)
 	CC=/usr/bin/clang

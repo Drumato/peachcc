@@ -1,19 +1,4 @@
-#include <fcntl.h>
-#include <getopt.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/io.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
-
-#include "codegen.h"
-#include "debug.h"
-#include "lexer.h"
-#include "parser/toplevel.h"
 #include "peachcc.h"
-#include "token.h"
 
 static int read_file(const char *file_path, char **buf);
 static bool parse_cmd_args(int argc, char **argv, CompileOption **cmd_opt);
@@ -36,13 +21,22 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    TokenList tokens;
-    tokenize(&tokens, c_program_g);
-    Expr *e = parse(&tokens);
+    TokenList *tokens = new_vec();
+    tokenize(tokens, c_program_g);
 
     if (peachcc_opt_g->debug)
     {
-        dump_ast(e, 0);
+        for (size_t i = 0; i < tokens->len; i++)
+        {
+            fprintf(stderr, "tokens[%zu] = '%s'\n", i, ((Token *)tokens->data[i])->str);
+        }
+    }
+
+    Program *program = parse(tokens);
+
+    if (peachcc_opt_g->debug)
+    {
+        dump_ast(program);
     }
 
     // アセンブリの書き込み先のopen
@@ -53,7 +47,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    codegen(output_file, e);
+    codegen(output_file, program);
 
     // トークンやASTのフリーは必ずプログラムの最後で
     free(cur_g);

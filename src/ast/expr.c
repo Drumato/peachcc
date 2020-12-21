@@ -1,8 +1,4 @@
-#include "ast/expr.h"
-
-#include "stdio.h"
-#include "stdlib.h"
-#include "string.h"
+#include "peachcc.h"
 
 static Expr *new_expr(ExprKind k, char *str);
 
@@ -25,6 +21,12 @@ Expr *new_integer(int value, char *str)
 {
     Expr *e = new_expr(EX_INTEGER, str);
     e->value = value;
+    return e;
+}
+Expr *new_identifier(char *str, size_t length)
+{
+    Expr *e = new_expr(EX_LOCAL_VAR, str);
+    e->length = length;
     return e;
 }
 static Expr *new_expr(ExprKind k, char *str)

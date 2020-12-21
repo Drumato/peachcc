@@ -1,4 +1,6 @@
-#include "token.h"
+#include "peachcc.h"
+
+#include <stdlib.h>
 
 //!新しいトークンを作成する
 Token *new_token(TokenKind kind, char *str)
@@ -6,6 +8,14 @@ Token *new_token(TokenKind kind, char *str)
     Token *tok = calloc(1, sizeof(Token));
     tok->kind = kind;
     tok->str = str;
+    return tok;
+}
+
+// 識別子トークンの作成
+Token *new_identifier_token(char *str, size_t length)
+{
+    Token *tok = new_token(TK_IDENTIFIER, str);
+    tok->length = length;
     return tok;
 }
 
@@ -19,19 +29,19 @@ Token *new_integer_token(char *str, int value)
 
 void push_token(TokenList *tokens, Token *tok)
 {
-    arraystack_push(tokens, tok);
+    vec_push(tokens, tok);
 }
 // リスト中のposが指す現在の要素を見る
-void current_token(TokenList *tokens, Token *cur)
+Token *current_token(TokenList *tokens)
 {
-    arraystack_get(tokens, tokens->pos, cur);
+    return (Token *)tokens->data[tokens->pos];
 }
 // リスト中のposが指す現在のトークンの種類を見る
 TokenKind current_tk(TokenList *tokens)
 {
-    Token cur;
-    current_token(tokens, &cur);
-    return cur.kind;
+    Token *cur;
+    cur = current_token(tokens);
+    return cur->kind;
 }
 
 // トークンを読みすすめる
