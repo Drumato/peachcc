@@ -28,10 +28,6 @@ Token *new_integer_token(char *str, int value, size_t length)
     return tok;
 }
 
-void push_token(TokenList *tokens, Token *tok)
-{
-    vec_push(tokens, tok);
-}
 // リスト中のposが指す現在の要素を見る
 Token *current_token(TokenList *tokens)
 {

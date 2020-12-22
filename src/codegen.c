@@ -2,8 +2,10 @@
 
 static FILE *output_file_g;
 static int label_num_g;
-static char *arg_reg64_g[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+static char *param_reg64_g[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+static Function *cur_fn_g;
 
+static void gen_fn(Function *fn);
 static void gen_stmt(Stmt *stmt);
 
 static void gen_function_prologue(int stack_size);
@@ -23,19 +25,37 @@ void codegen(FILE *output_file, Program *program)
     label_num_g = 0;
     output_file_g = output_file;
 
-    out_newline(".intel_syntax noprefix");
-    out_newline(".globl main");
-    out_newline("main:");
-
-    // 現在は決め打ちでスタックをアロケーション
-    gen_function_prologue(total_stack_size_in_fn_g);
-
-    for (size_t i = 0; i < program->stmts->len; i++)
+    for (size_t i = 0; i < program->functions->len; i++)
     {
-        Stmt *s = (Stmt *)program->stmts->data[i];
+        Function *f = (Function *)program->functions->data[i];
+        gen_fn(f);
+    }
+
+    gen_function_epilogue();
+}
+
+static void gen_fn(Function *fn)
+{
+    cur_fn_g = fn;
+    out_newline(".intel_syntax noprefix");
+    out_newline(".globl %s", fn->copied_name);
+    out_newline("%s:", fn->copied_name);
+
+    gen_function_prologue(fn->stack_size);
+
+    // 引数がある分，スタックにstoreするコードを生成する
+    for (size_t i = 0; i < fn->params->len; i++)
+    {
+        char *param_name = fn->params->data[i];
+        LocalVariable *lv = (LocalVariable *)map_get(cur_fn_g->local_variables, param_name, strlen(param_name));
+        out_newline("  mov -%zu[rbp], %s", lv->stack_offset, param_reg64_g[i]);
+    }
+
+    for (size_t i = 0; i < fn->stmts->len; i++)
+    {
+        Stmt *s = (Stmt *)fn->stmts->data[i];
         gen_stmt(s);
     }
-    gen_function_epilogue();
 }
 
 static void gen_stmt(Stmt *stmt)
@@ -147,17 +167,17 @@ static void gen_expr(Expr *expr)
         break;
     case EX_CALL:
     {
-        int nargs = 0;
-        for (int i = 0; i < expr->args->len; i++)
+        int nparams = 0;
+        for (int i = 0; i < expr->params->len; i++)
         {
-            Expr *arg = expr->args->data[i];
+            Expr *arg = expr->params->data[i];
             gen_expr(arg);
-            nargs++;
+            nparams++;
         }
 
-        for (int i = nargs - 1; i >= 0; i--)
+        for (int i = nparams - 1; i >= 0; i--)
         {
-            pop_reg(arg_reg64_g[i]);
+            pop_reg(param_reg64_g[i]);
         }
 
         out_newline("  call %s", expr->copied_name);
@@ -208,11 +228,10 @@ static void gen_lvalue(Expr *expr)
     out_newline("  mov rax, rbp");
 
     // 変数のスタックオフセットを計算
-    LocalVariable *lv = map_get(local_variables_g, expr->copied_name, expr->length);
+    LocalVariable *lv = map_get(cur_fn_g->local_variables, expr->copied_name, expr->length);
     out_newline("  sub rax, %d", lv->stack_offset);
     push_reg("rax");
 }
-
 static void gen_binop_expr(Expr *expr)
 {
     assert(expr->lhs);

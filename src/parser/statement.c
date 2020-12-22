@@ -2,7 +2,6 @@
 
 static Stmt *expr_stmt(TokenList *tokens);
 static Stmt *return_stmt(TokenList *tokens);
-static Stmt *compound_stmt(TokenList *tokens);
 static Stmt *if_stmt(TokenList *tokens);
 static Stmt *for_stmt(TokenList *tokens);
 static Stmt *while_stmt(TokenList *tokens);
@@ -14,7 +13,13 @@ Stmt *statement(TokenList *tokens)
     case TK_RETURN:
         return return_stmt(tokens);
     case TK_LBRACKET:
-        return compound_stmt(tokens);
+    {
+        Token *loc = current_token(tokens);
+
+        Stmt *s = new_stmt(ST_COMPOUND, loc->str);
+        s->body = compound_stmt(tokens);
+        return s;
+    }
     case TK_IF:
         return if_stmt(tokens);
     case TK_FOR:
@@ -107,19 +112,15 @@ static Stmt *for_stmt(TokenList *tokens)
 }
 
 // '{' statement* '}'
-static Stmt *compound_stmt(TokenList *tokens)
+Vector *compound_stmt(TokenList *tokens)
 {
-    char *loc = cur_g->str;
-
     expect(tokens, TK_LBRACKET);
     Vector *body = new_vec();
     while (!try_eat(tokens, TK_RBRACKET))
     {
         vec_push(body, statement(tokens));
     }
-    Stmt *s = new_stmt(ST_COMPOUND, loc);
-    s->body = body;
-    return s;
+    return body;
 }
 
 // expression ';'

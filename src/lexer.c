@@ -25,7 +25,7 @@ void tokenize(TokenList *tokens, char *p)
         if ((t = c_keyword(p)) != NULL)
         {
             p += t->length;
-            push_token(tokens, t);
+            vec_push(tokens, t);
             continue;
         }
 
@@ -33,7 +33,7 @@ void tokenize(TokenList *tokens, char *p)
         {
             Token *id = identifier(p);
             p += id->length;
-            push_token(tokens, id);
+            vec_push(tokens, id);
             continue;
         }
 
@@ -42,14 +42,14 @@ void tokenize(TokenList *tokens, char *p)
         if ((t = multilength_symbol(p)) != NULL)
         {
             p += t->length;
-            push_token(tokens, t);
+            vec_push(tokens, t);
             continue;
         }
 
         if (strchr("+-*/(){}<>;=,", *p) != NULL)
         {
             TokenKind op = char_to_operator(*p);
-            push_token(tokens, new_token(op, p++, 1));
+            vec_push(tokens, new_token(op, p++, 1));
             continue;
         }
 
@@ -58,14 +58,14 @@ void tokenize(TokenList *tokens, char *p)
             char *intlit_loc = p;
             int value = strtol(p, &p, 10);
             Token *intlit = new_integer_token(intlit_loc, value, p - intlit_loc);
-            push_token(tokens, intlit);
+            vec_push(tokens, intlit);
             continue;
         }
 
         error_at(p, "can't tokenize");
     }
 
-    push_token(tokens, new_token(TK_EOF, p, 0));
+    vec_push(tokens, new_token(TK_EOF, p, 0));
     return;
 }
 

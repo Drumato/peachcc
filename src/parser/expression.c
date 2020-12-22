@@ -200,11 +200,11 @@ static Expr *ident_expr(TokenList *tokens, Token *ident_loc)
         // 普通の識別子
 
         // いずれ宣言のパーサにコードを移動する
-        if ((lv = (LocalVariable *)map_get(local_variables_g, ident_loc->str, ident_loc->length)) == NULL)
+        if ((lv = (LocalVariable *)map_get(local_variables_in_cur_fn_g, ident_loc->str, ident_loc->length)) == NULL)
         {
             total_stack_size_in_fn_g += 8;
             lv = new_local_var(ident_loc->str, ident_loc->length, total_stack_size_in_fn_g);
-            map_put(local_variables_g, ident_loc->str, lv);
+            map_put(local_variables_in_cur_fn_g, ident_loc->str, lv);
         }
         return id;
     }
@@ -221,18 +221,18 @@ static Expr *call_expr(TokenList *tokens, Expr *id)
 {
     id->kind = EX_CALL;
     expect(tokens, TK_LPAREN);
-    Vector *args = new_vec();
+    Vector *params = new_vec();
 
     while (!try_eat(tokens, TK_RPAREN))
     {
-        vec_push(args, expression(tokens));
+        vec_push(params, expression(tokens));
         if (try_eat(tokens, TK_RPAREN))
         {
             break;
         }
         expect(tokens, TK_COMMA);
     }
-    id->args = args;
+    id->params = params;
 
     return id;
 }

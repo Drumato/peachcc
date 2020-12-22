@@ -1,5 +1,6 @@
 #include "peachcc.h"
 
+static void dump_fn(Function *f);
 static void dump_stmt(Stmt *s, int indent);
 static void dump_expr(Expr *e);
 
@@ -20,11 +21,22 @@ void error_at(char *loc, char *fmt, ...)
 void dump_ast(Program *program)
 {
     assert(program);
-    for (size_t i = 0; i < program->stmts->len; i++)
+    for (size_t i = 0; i < program->functions->len; i++)
     {
-        Stmt *s = (Stmt *)(program->stmts->data[i]);
-        dump_stmt(s, 0);
+        Function *f = (Function *)(program->functions->data[i]);
+        dump_fn(f);
     }
+}
+
+static void dump_fn(Function *f)
+{
+    fprintf(stderr, "%s() {\n", f->copied_name);
+    for (size_t i = 0; i < f->stmts->len; i++)
+    {
+        Stmt *s = (Stmt *)f->stmts->data[i];
+        dump_stmt(s, 4);
+    }
+    fprintf(stderr, ")\n");
 }
 
 static void dump_stmt(Stmt *s, int indent)
@@ -48,7 +60,7 @@ static void dump_stmt(Stmt *s, int indent)
         dump_stmt(s->then, indent + 4);
         if (s->els != NULL)
         {
-            fprintf(stderr, "ElseBlock:\n");
+            fprintf(stderr, "%*sElseBlock:\n", indent, " ");
             dump_stmt(s->els, indent + 4);
         }
 
@@ -108,11 +120,11 @@ static void dump_expr(Expr *e)
     case EX_CALL:
     {
         fprintf(stderr, "%s(", e->copied_name);
-        for (size_t i = 0; i < e->args->len; i++)
+        for (size_t i = 0; i < e->params->len; i++)
         {
-            Expr *arg = (Expr *)e->args->data[i];
-            dump_expr(arg);
-            if (i != e->args->len - 1)
+            Expr *param = (Expr *)e->params->data[i];
+            dump_expr(param);
+            if (i != e->params->len - 1)
             {
                 fprintf(stderr, ", ");
             }

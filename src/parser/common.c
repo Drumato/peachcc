@@ -49,12 +49,6 @@ bool at_eof(TokenList *tokens)
 {
     return current_tk(tokens) == TK_EOF;
 }
-
-void push_statement(Vector *stmts, Stmt *s)
-{
-    vec_push(stmts, s);
-}
-
 Token *try_eat_identifier(TokenList *tokens)
 {
     Token *ident_loc = current_token(tokens);

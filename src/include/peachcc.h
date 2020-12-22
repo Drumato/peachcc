@@ -110,8 +110,6 @@ Token *new_integer_token(char *str, int value, size_t length);
 Token *new_identifier_token(char *str, size_t length);
 // 新しいトークンを作成する
 Token *new_token(TokenKind kind, char *str, size_t length);
-// スタックにトークンをプッシュする
-void push_token(TokenList *tokens, Token *tok);
 // リスト中のposが指す現在の要素を見る
 Token *current_token(TokenList *tokens);
 // リスト中のposが指す現在のトークンの種類を見る
@@ -154,7 +152,7 @@ struct Expr
     Expr *lhs;     // 左辺(2つのオペランドを取るノードで使用)
     Expr *rhs;     // 右辺(2つのオペランドを取るノードで使用)
 
-    Vector *args; // 呼び出し式で使用
+    Vector *params; // 呼び出し式で使用
 
     Expr *unary_op; // 単項演算で使用
     int value;      // kindがND_INTEGERの場合のみ使う
@@ -198,11 +196,32 @@ struct Stmt
 
 Stmt *new_stmt(StmtKind k, char *loc);
 
+/// ast/function.c
+struct Function
+{
+    // 関数名
+    // コピーされているので，そのまま出力可能
+    char *copied_name;
+    // ローカル変数の辞書
+    Map *local_variables;
+    Vector *stmts;
+    // 関数が持つフレームサイズ
+    size_t stack_size;
+    // 引数リスト
+    // 現在はただ引数名を持っているに過ぎない
+    // 後々型名とかを持つようになるはず
+    Vector *params;
+};
+typedef struct Function Function;
+
+Function *new_function(char *name, size_t length);
+
 /// ast/root.c
 
 struct Program
 {
-    Vector *stmts;
+    // 関数定義群
+    Vector *functions;
 };
 typedef struct Program Program;
 Program *new_program(void);
@@ -241,8 +260,6 @@ bool eatable(TokenList *tokens, TokenKind k);
 
 bool at_eof(TokenList *tokens);
 
-void push_statement(Vector *stmts, Stmt *s);
-
 Token *try_eat_identifier(TokenList *tokens);
 
 /// parser/toplevel.c
@@ -250,7 +267,7 @@ Program *parse(TokenList *tokens);
 
 /// parser/statement.c
 
-// expr_stmt
+Vector *compound_stmt(TokenList *tokens);
 Stmt *statement(TokenList *tokens);
 
 /// parser/expression.c
@@ -274,9 +291,8 @@ char *c_program_g;
 // 現在のトークンを指す
 // パーサ内部でしか用いられず，最終的にfreeする．
 Token *cur_g;
-// ローカル変数を保持するマップ
-// 関数実装時に削除する
-Map *local_variables_g;
+// パーサで用いる
+Map *local_variables_in_cur_fn_g;
 // パース時にスタックオフセットを決定するために使用
 // 関数をパースする毎に，0に初期化する必要がある
 size_t total_stack_size_in_fn_g;
