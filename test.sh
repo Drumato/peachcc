@@ -94,6 +94,15 @@ assert 32 'main() { return ret32(); }  ret32() { return 32; }'
 assert 55 'main() { return rec(0); }  rec(n) { if(n == 10){return n;} else{ return n + rec(n+1); } }'
 assert 144 'main () { return fibonacci(12); } fibonacci(n) { if(n == 0) { return 0; } else if(n == 1) { return 1; } else { return fibonacci(n-1) + fibonacci(n-2); } }'
 
+assert 3 'main() { x=3; return *&x; }'
+assert 3 'main() { x=3; y=&x; z=&y; return **z; }'
+assert 5 'main() { x=3; y=5; return *(&x+8); }'
+assert 3 'main() { x=3; y=5; return *(&y-8); }'
+assert 5 'main() { x=3; y=&x; *y=5; return x; }'
+assert 7 'main() { x=3; y=5; *(&x+8)=7; return y; }'
+
+assert 7 'main() { x=3; y=5; *(&y-8)=7; return x; }'
+
 echo -e "\e[33mAll Test Passed.\e[0m"
 
 make clean

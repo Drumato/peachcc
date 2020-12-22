@@ -46,7 +46,7 @@ void tokenize(TokenList *tokens, char *p)
             continue;
         }
 
-        if (strchr("+-*/(){}<>;=,", *p) != NULL)
+        if (strchr("+-*/(){}<>;=,&", *p) != NULL)
         {
             TokenKind op = char_to_operator(*p);
             vec_push(tokens, new_token(op, p++, 1));
@@ -137,6 +137,8 @@ static TokenKind char_to_operator(char op)
         return TK_STAR;
     case '/':
         return TK_SLASH;
+    case '&':
+        return TK_AMPERSAND;
     case '(':
         return TK_LPAREN;
     case ')':

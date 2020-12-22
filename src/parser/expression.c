@@ -146,7 +146,7 @@ static Expr *multiplication(TokenList *tokens)
     return e;
 }
 
-// ('+' | '-')? prefix_unary
+// ('+' | '-' | '*' | '&')? prefix_unary
 static Expr *prefix_unary(TokenList *tokens)
 {
     Expr *e;
@@ -155,6 +155,10 @@ static Expr *prefix_unary(TokenList *tokens)
         e = new_unop(EX_UNARY_PLUS, prefix_unary(tokens), cur_g->str);
     else if (try_eat(tokens, TK_MINUS))
         e = new_unop(EX_UNARY_MINUS, prefix_unary(tokens), cur_g->str);
+    else if (try_eat(tokens, TK_STAR))
+        e = new_unop(EX_UNARY_DEREF, prefix_unary(tokens), cur_g->str);
+    else if (try_eat(tokens, TK_AMPERSAND))
+        e = new_unop(EX_UNARY_ADDR, prefix_unary(tokens), cur_g->str);
     else
         e = primary(tokens);
     return e;
@@ -203,7 +207,7 @@ static Expr *ident_expr(TokenList *tokens, Token *ident_loc)
         if ((lv = (LocalVariable *)map_get(local_variables_in_cur_fn_g, ident_loc->str, ident_loc->length)) == NULL)
         {
             total_stack_size_in_fn_g += 8;
-            lv = new_local_var(ident_loc->str, ident_loc->length, total_stack_size_in_fn_g);
+            lv = new_local_var(ident_loc->str, ident_loc->length, 0);
             map_put(local_variables_in_cur_fn_g, ident_loc->str, lv);
         }
         return id;

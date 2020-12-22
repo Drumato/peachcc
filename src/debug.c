@@ -195,6 +195,14 @@ static void dump_expr(Expr *e)
         fprintf(stderr, "- ");
         dump_expr(e->unary_op);
         break;
+    case EX_UNARY_ADDR:
+        fprintf(stderr, "& ");
+        dump_expr(e->unary_op);
+        break;
+    case EX_UNARY_DEREF:
+        fprintf(stderr, "* ");
+        dump_expr(e->unary_op);
+        break;
     case EX_INTEGER:
         fprintf(stderr, "%d", e->value);
         break;

@@ -184,10 +184,14 @@ static void gen_expr(Expr *expr)
         push_reg("rax");
         break;
     }
-    case EX_UNARY_PLUS:
-        gen_unary_op_expr(expr);
+    case EX_UNARY_ADDR:
+        // このノードだけgen_unary_op_expr()に突っ込めないので注意
+        // 単にアドレスを生成して返すだけなので．
+        gen_lvalue(expr->unary_op);
         break;
+    case EX_UNARY_PLUS:
     case EX_UNARY_MINUS:
+    case EX_UNARY_DEREF:
         gen_unary_op_expr(expr);
         break;
     case EX_ADD:
@@ -222,15 +226,26 @@ static void gen_expr(Expr *expr)
 
 static void gen_lvalue(Expr *expr)
 {
-    if (expr->kind != EX_LOCAL_VAR)
-        error_at(expr->str, "It's not a variable in assignment");
+    switch (expr->kind)
+    {
+    case EX_LOCAL_VAR:
+    {
+        out_newline("  mov rax, rbp");
 
-    out_newline("  mov rax, rbp");
-
-    // 変数のスタックオフセットを計算
-    LocalVariable *lv = map_get(cur_fn_g->local_variables, expr->copied_name, expr->length);
-    out_newline("  sub rax, %d", lv->stack_offset);
-    push_reg("rax");
+        // 変数のスタックオフセットを計算
+        LocalVariable *lv = map_get(cur_fn_g->local_variables, expr->copied_name, expr->length);
+        out_newline("  sub rax, %d", lv->stack_offset);
+        push_reg("rax");
+        break;
+    }
+    case EX_UNARY_DEREF:
+    {
+        gen_expr(expr->unary_op);
+        break;
+    }
+    default:
+        error_at(expr->str, "not allowed this expr as a lvalue");
+    }
 }
 static void gen_binop_expr(Expr *expr)
 {
@@ -298,6 +313,9 @@ static void gen_unary_op_expr(Expr *expr)
 
     case EX_UNARY_MINUS:
         out_newline("  neg rax");
+        break;
+    case EX_UNARY_DEREF:
+        out_newline("  mov rax, [rax]");
         break;
     default:
         error_at(expr->str, "It's not a unary operation");

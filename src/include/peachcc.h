@@ -64,6 +64,7 @@ enum TokenKind
     TK_MINUS,      // `-`
     TK_STAR,       // `*`
     TK_SLASH,      // `/`
+    TK_AMPERSAND,  // `&`
     TK_LPAREN,     // `(`
     TK_RPAREN,     // `)`
     TK_LBRACKET,   // `{`
@@ -132,6 +133,8 @@ typedef enum
     EX_NTEQ,        // `lhs != rhs`
     EX_UNARY_PLUS,  // 単項+
     EX_UNARY_MINUS, // 単項-
+    EX_UNARY_ADDR,  // 単項&
+    EX_UNARY_DEREF, // 単項*
     EX_INTEGER,     // 整数リテラル
     EX_CALL,        // 呼び出し式
     EX_LOCAL_VAR,   // 識別子

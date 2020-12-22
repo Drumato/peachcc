@@ -48,7 +48,7 @@ static Function *function(TokenList *tokens)
         if ((lv = (LocalVariable *)map_get(local_variables_in_cur_fn_g, id->str, id->length)) == NULL)
         {
             total_stack_size_in_fn_g += 8;
-            lv = new_local_var(id->str, id->length, total_stack_size_in_fn_g);
+            lv = new_local_var(id->str, id->length, 0);
             map_put(local_variables_in_cur_fn_g, id->str, lv);
         }
 
@@ -60,6 +60,16 @@ static Function *function(TokenList *tokens)
     }
 
     Vector *stmts = compound_stmt(tokens);
+
+    // とりあえずパーサでスタックに割り当ててしまう
+    size_t total_stack_size = total_stack_size_in_fn_g;
+    for (size_t i = 0; i < local_variables_in_cur_fn_g->keys->len; i++)
+    {
+        lv = local_variables_in_cur_fn_g->vals->data[i];
+        lv->stack_offset = total_stack_size;
+        total_stack_size -= 8;
+    }
+
     f->stmts = stmts;
     f->params = params;
     f->stack_size = total_stack_size_in_fn_g;
