@@ -66,6 +66,8 @@ enum TokenKind
     TK_SLASH,      // `/`
     TK_LPAREN,     // `(`
     TK_RPAREN,     // `)`
+    TK_LBRACKET,   // `{`
+    TK_RBRACKET,   // `}`
     TK_LE,         // `<`
     TK_GE,         // `>`
     TK_LEEQ,       // `<=`
@@ -156,8 +158,9 @@ Expr *new_identifier(char *str, size_t length);
 
 enum StmtKind
 {
-    ST_EXPR,   // Expression statement.
-    ST_RETURN, // return statement,
+    ST_EXPR,     // Expression statement.
+    ST_RETURN,   // return statement,
+    ST_COMPOUND, // Compound statement
 };
 
 typedef enum StmtKind StmtKind;
@@ -168,12 +171,12 @@ struct Stmt
 {
     StmtKind kind; // Statementの種類
     Expr *expr;    // ST_EXPR, ST_RETURNで使用
+    Vector *body;  // ST_BLOCK等で使用
 
     char *loc; // デバッグで使用
 };
 
-Stmt *new_exprstmt(Expr *expr, char *loc);
-Stmt *new_returnstmt(Expr *expr, char *loc);
+Stmt *new_stmt(StmtKind k, char *loc);
 
 /// ast/root.c
 

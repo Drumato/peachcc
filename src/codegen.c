@@ -46,6 +46,13 @@ static void gen_stmt(Stmt *stmt)
         out_newline("  pop rax");
         out_newline("  jmp .Lend");
         break;
+    case ST_COMPOUND:
+        for (size_t i = 0; i < stmt->body->len; i++)
+        {
+            Stmt *child = stmt->body->data[i];
+            gen_stmt(child);
+        }
+        break;
     default:
         error_at(stmt->loc, "cannot codegen from it");
         break;

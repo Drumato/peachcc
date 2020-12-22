@@ -23,7 +23,7 @@ void dump_ast(Program *program)
     for (size_t i = 0; i < program->stmts->len; i++)
     {
         Stmt *s = (Stmt *)(program->stmts->data[i]);
-        dump_stmt(s, 4);
+        dump_stmt(s, 0);
     }
 }
 
@@ -33,14 +33,23 @@ static void dump_stmt(Stmt *s, int indent)
     switch (s->kind)
     {
     case ST_RETURN:
-        fprintf(stderr, "ReturnStmt(");
+        fprintf(stderr, "%*sReturnStmt(", indent, " ");
         dump_expr(s->expr, indent);
         fprintf(stderr, ");\n");
         break;
     case ST_EXPR:
-        fprintf(stderr, "ExprStmt(");
+        fprintf(stderr, "%*sExprStmt(", indent, " ");
         dump_expr(s->expr, indent);
         fprintf(stderr, ");\n");
+        break;
+    case ST_COMPOUND:
+        fprintf(stderr, "%*sCompoundStmt(\n", indent, " ");
+        for (size_t i = 0; i < s->body->len; i++)
+        {
+            Stmt *child = (Stmt *)s->body->data[i];
+            dump_stmt(child, indent + 4);
+        }
+        fprintf(stderr, "%*s);\n", indent, " ");
         break;
     }
 }

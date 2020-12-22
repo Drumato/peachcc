@@ -24,14 +24,6 @@ int main(int argc, char **argv)
     TokenList *tokens = new_vec();
     tokenize(tokens, c_program_g);
 
-    if (peachcc_opt_g->debug)
-    {
-        for (size_t i = 0; i < tokens->len; i++)
-        {
-            fprintf(stderr, "tokens[%zu] = '%s'\n", i, ((Token *)tokens->data[i])->str);
-        }
-    }
-
     Program *program = parse(tokens);
 
     if (peachcc_opt_g->debug)
