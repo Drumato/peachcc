@@ -41,6 +41,20 @@ void *vec_last(Vector *v);
 bool vec_contains(Vector *v, void *elem);
 bool vec_union1(Vector *v, void *elem);
 
+/// map.c
+
+struct Map
+{
+    Vector *keys;
+    Vector *vals;
+};
+typedef struct Map Map;
+
+Map *new_map(void);
+void map_put(Map *map, char *key, void *val);
+void *map_get(Map *map, char *key, size_t length);
+// bool map_exists(Map *map, char *key, size_t length);
+
 /// token.c
 
 // Tokenの種類
@@ -83,11 +97,11 @@ struct Token
 typedef Vector TokenList;
 
 // 整数トークンの作成
-Token *new_integer_token(char *str, int value);
+Token *new_integer_token(char *str, int value, size_t length);
 // 識別子トークンの作成
 Token *new_identifier_token(char *str, size_t length);
 // 新しいトークンを作成する
-Token *new_token(TokenKind kind, char *str);
+Token *new_token(TokenKind kind, char *str, size_t length);
 // スタックにトークンをプッシュする
 void push_token(TokenList *tokens, Token *tok);
 // リスト中のposが指す現在の要素を見る
@@ -167,6 +181,17 @@ struct Program
 typedef struct Program Program;
 Program *new_program(void);
 
+/// variable.c
+struct LocalVariable
+{
+    char *str;
+    size_t length;
+    size_t stack_offset;
+};
+typedef struct LocalVariable LocalVariable;
+
+LocalVariable *new_local_var(char *str, size_t length, size_t stack_offset);
+
 /// lexer.c
 void tokenize(TokenList *tokens, char *p);
 
@@ -223,6 +248,12 @@ char *c_program_g;
 // 現在のトークンを指す
 // パーサ内部でしか用いられず，最終的にfreeする．
 Token *cur_g;
+// ローカル変数を保持するマップ
+// 関数実装時に削除する
+Map *local_variables_g;
+// パース時にスタックオフセットを決定するために使用
+// 関数をパースする毎に，0に初期化する必要がある
+size_t total_stack_size_in_fn_g;
 
 // コンパイルオプションを扱う構造体．
 // main関数でコマンドラインオプションのパースが実行され，適切な値が格納されている．

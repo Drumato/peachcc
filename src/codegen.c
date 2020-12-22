@@ -23,7 +23,7 @@ void codegen(FILE *output_file, Program *program)
     out_newline("main:");
 
     // 現在は決め打ちでスタックをアロケーション
-    gen_function_prologue(208);
+    gen_function_prologue(total_stack_size_in_fn_g);
 
     for (size_t i = 0; i < program->stmts->len; i++)
     {
@@ -104,8 +104,8 @@ static void gen_lvalue(Expr *expr)
     out_newline("  mov rax, rbp");
 
     // 変数のスタックオフセットを計算
-    int offset = (expr->str[0] - 'a' + 1) * 8;
-    out_newline("  sub rax, %d", offset);
+    LocalVariable *lv = map_get(local_variables_g, expr->str, expr->length);
+    out_newline("  sub rax, %d", lv->stack_offset);
     out_newline("  push rax");
 }
 

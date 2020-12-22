@@ -3,26 +3,27 @@
 #include <stdlib.h>
 
 //!新しいトークンを作成する
-Token *new_token(TokenKind kind, char *str)
+Token *new_token(TokenKind kind, char *str, size_t length)
 {
     Token *tok = calloc(1, sizeof(Token));
     tok->kind = kind;
     tok->str = str;
+    tok->length = length;
     return tok;
 }
 
 // 識別子トークンの作成
 Token *new_identifier_token(char *str, size_t length)
 {
-    Token *tok = new_token(TK_IDENTIFIER, str);
+    Token *tok = new_token(TK_IDENTIFIER, str, length);
     tok->length = length;
     return tok;
 }
 
 // 整数トークンの作成
-Token *new_integer_token(char *str, int value)
+Token *new_integer_token(char *str, int value, size_t length)
 {
-    Token *tok = new_token(TK_INTEGER, str);
+    Token *tok = new_token(TK_INTEGER, str, length);
     tok->value = value;
     return tok;
 }

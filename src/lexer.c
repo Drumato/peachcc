@@ -1,7 +1,8 @@
 
 #include "peachcc.h"
 static TokenKind char_to_operator(char op);
-static Token *multilength_symbol(char **ptr);
+static Token *multilength_symbol(char *ptr);
+static Token *identifier(char *ptr);
 
 void tokenize(TokenList *tokens, char *p)
 {
@@ -18,9 +19,10 @@ void tokenize(TokenList *tokens, char *p)
             continue;
         }
 
-        if (isalpha(*p))
+        if (isalpha(*p) || *p == '_')
         {
-            Token *id = new_identifier_token(p++, 1);
+            Token *id = identifier(p);
+            p += id->length;
             push_token(tokens, id);
             continue;
         }
@@ -28,8 +30,9 @@ void tokenize(TokenList *tokens, char *p)
         // 先に二文字以上の記号をtokenize可能かチェックすることで，
         // 一文字の記号のtokinizeがstrchr()で簡略化できる．
         Token *t;
-        if ((t = multilength_symbol(&p)) != NULL)
+        if ((t = multilength_symbol(p)) != NULL)
         {
+            p += t->length;
             push_token(tokens, t);
             continue;
         }
@@ -37,15 +40,15 @@ void tokenize(TokenList *tokens, char *p)
         if (strchr("+-*/()<>;=", *p) != NULL)
         {
             TokenKind op = char_to_operator(*p);
-            push_token(tokens, new_token(op, p++));
+            push_token(tokens, new_token(op, p++, 1));
             continue;
         }
 
         if (isdigit(*p))
         {
-            char *int_str = p;
+            char *intlit_loc = p;
             int value = strtol(p, &p, 10);
-            Token *intlit = new_integer_token(int_str, value);
+            Token *intlit = new_integer_token(intlit_loc, value, p - intlit_loc);
             push_token(tokens, intlit);
             continue;
         }
@@ -53,11 +56,27 @@ void tokenize(TokenList *tokens, char *p)
         error_at(p, "can't tokenize");
     }
 
-    push_token(tokens, new_token(TK_EOF, p));
+    push_token(tokens, new_token(TK_EOF, p, 0));
     return;
 }
 
-static Token *multilength_symbol(char **ptr)
+// 識別子トークンのスキャン
+// ('_' | [a-zA-Z]) ('_' | [a-zA-Z0-9])*
+static Token *identifier(char *ptr)
+{
+    char *p = ptr;
+    while (isalpha(*p) || *p == '_')
+    {
+        p++;
+    }
+    while (isalnum(*p) || *p == '_')
+    {
+        p++;
+    }
+    return new_identifier_token(ptr, p - ptr);
+}
+
+static Token *multilength_symbol(char *ptr)
 {
     char *symbols[] = {"==", "!=", "<=", ">=", NULL};
     TokenKind kinds[] = {TK_EQ, TK_NTEQ, TK_LEEQ, TK_GEEQ};
@@ -66,11 +85,10 @@ static Token *multilength_symbol(char **ptr)
     // kindsとsymbolsには要素数の差がある(len(symbols == len(kinds) - 1))
     for (int i = 0; symbols[i] != NULL; i++)
     {
-        if (!strncmp(*ptr, symbols[i], strlen(symbols[i])))
+        if (!strncmp(ptr, symbols[i], strlen(symbols[i])))
         {
-            char *p = *ptr;
-            (*ptr) += 2;
-            return new_token(kinds[i], p);
+            char *p = ptr;
+            return new_token(kinds[i], p, 2);
         }
     }
 

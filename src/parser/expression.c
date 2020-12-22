@@ -167,9 +167,19 @@ static Expr *primary(TokenList *tokens)
     }
 
     Token *ident_loc;
+    LocalVariable *lv;
     if ((ident_loc = try_eat_identifier(tokens)) != NULL)
     {
-        return new_identifier(ident_loc->str, ident_loc->length);
+        Expr *id = new_identifier(ident_loc->str, ident_loc->length);
+
+        // いずれ宣言の場所にコードを移動する
+        if ((lv = (LocalVariable *)map_get(local_variables_g, ident_loc->str, ident_loc->length)) == NULL)
+        {
+            total_stack_size_in_fn_g += 8;
+            lv = new_local_var(ident_loc->str, ident_loc->length, total_stack_size_in_fn_g);
+            map_put(local_variables_g, ident_loc->str, lv);
+        }
+        return id;
     }
 
     char *loc = cur_g->str;
