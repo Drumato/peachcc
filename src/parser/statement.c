@@ -5,6 +5,7 @@ static Stmt *return_stmt(TokenList *tokens);
 static Stmt *compound_stmt(TokenList *tokens);
 static Stmt *if_stmt(TokenList *tokens);
 static Stmt *for_stmt(TokenList *tokens);
+static Stmt *while_stmt(TokenList *tokens);
 
 Stmt *statement(TokenList *tokens)
 {
@@ -18,6 +19,8 @@ Stmt *statement(TokenList *tokens)
         return if_stmt(tokens);
     case TK_FOR:
         return for_stmt(tokens);
+    case TK_WHILE:
+        return while_stmt(tokens);
     default:
         return expr_stmt(tokens);
     }
@@ -35,7 +38,23 @@ static Stmt *return_stmt(TokenList *tokens)
     return s;
 }
 
-// if" '(' expression ')' statement ("else" statement)?
+// "while" '(' expression ')' statement
+static Stmt *while_stmt(TokenList *tokens)
+{
+    char *loc = cur_g->str;
+    expect(tokens, TK_WHILE);
+    expect(tokens, TK_LPAREN);
+    Expr *condition = expression(tokens);
+    expect(tokens, TK_RPAREN);
+
+    Stmt *then = statement(tokens);
+    Stmt *s = new_stmt(ST_WHILE, loc);
+    s->cond = condition;
+    s->then = then;
+    return s;
+}
+
+// "if" '(' expression ')' statement ("else" statement)?
 static Stmt *if_stmt(TokenList *tokens)
 {
     char *loc = cur_g->str;
@@ -45,17 +64,17 @@ static Stmt *if_stmt(TokenList *tokens)
     expect(tokens, TK_RPAREN);
 
     Stmt *then = statement(tokens);
-    Stmt *if_s = new_stmt(ST_IF, loc);
-    if_s->cond = condition;
-    if_s->then = then;
+    Stmt *s = new_stmt(ST_IF, loc);
+    s->cond = condition;
+    s->then = then;
 
     if (!try_eat(tokens, TK_ELSE))
     {
-        return if_s;
+        return s;
     }
-    if_s->els = statement(tokens);
+    s->els = statement(tokens);
 
-    return if_s;
+    return s;
 }
 
 // "for" '(' expression? ';' expression? ';' expression?')' statement

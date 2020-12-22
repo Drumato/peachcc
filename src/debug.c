@@ -32,9 +32,17 @@ static void dump_stmt(Stmt *s, int indent)
     assert(s);
     switch (s->kind)
     {
+    case ST_WHILE:
+        fprintf(stderr, "%*sWhileStmt(expr: ", indent, " ");
+        dump_expr(s->cond);
+        fprintf(stderr, ")\n");
+
+        dump_stmt(s->then, indent + 4);
+
+        break;
     case ST_IF:
         fprintf(stderr, "%*sIfStmt(expr: ", indent, " ");
-        dump_expr(s->expr);
+        dump_expr(s->cond);
         fprintf(stderr, ")\n");
 
         dump_stmt(s->then, indent + 4);

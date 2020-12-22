@@ -82,6 +82,7 @@ enum TokenKind
     TK_IF,         // "if"
     TK_ELSE,       // "else"
     TK_FOR,        // "for"
+    TK_WHILE,      // "while"
     TK_EOF,        // 入力の終わり
 };
 typedef enum TokenKind TokenKind;
@@ -166,6 +167,7 @@ enum StmtKind
     ST_IF,       // if statement
     ST_FOR,      // for statement
     ST_COMPOUND, // Compound statement
+    ST_WHILE,    // while statement
 };
 
 typedef enum StmtKind StmtKind;
@@ -176,12 +178,12 @@ struct Stmt
 {
     StmtKind kind; // Statementの種類
     Expr *expr;    // ST_EXPR, ST_RETURN, ST_IF, ST_FORで使用
-    Expr *cond;    // 条件式．ST_IF, ST_FORで使用
+    Expr *cond;    // 条件式．ST_WHILE, ST_IF, ST_FORで使用
     Expr *init;    // 初期化式．ST_FORで使用
     Expr *inc;     // ST_FORで使用
     Vector *body;  // ST_BLOCK等で使用
 
-    Stmt *then; // ST_IF, ST_FOR等で使用
+    Stmt *then; // ST_IF, ST_WHILE, ST_FOR等で使用
     Stmt *els;  // ST_IF等で使用
 
     char *loc; // デバッグで使用

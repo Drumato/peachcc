@@ -48,6 +48,21 @@ static void gen_stmt(Stmt *stmt)
         out_newline("  pop rax");
         out_newline("  jmp .L.return");
         break;
+    case ST_WHILE:
+    {
+        int label = label_num_g++;
+        out_newline(".Lbegin%d:", label);
+        gen_expr(stmt->cond);
+        out_newline("  pop rax");
+        out_newline("  cmp rax, 0");
+        out_newline("  je .Lend%d", label);
+
+        gen_stmt(stmt->then);
+        out_newline("  jmp .Lbegin%d", label);
+
+        out_newline(".Lend%d:", label);
+        break;
+    }
     case ST_FOR:
     {
         int label = label_num_g++;
