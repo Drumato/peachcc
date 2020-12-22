@@ -2,6 +2,7 @@
 
 static FILE *output_file_g;
 static int label_num_g;
+static char *arg_reg64_g[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
 static void gen_stmt(Stmt *stmt);
 
@@ -14,6 +15,8 @@ static void gen_unary_op_expr(Expr *expr);
 static void gen_compare_rax_and_rdi_by(char *mode);
 static void out_newline(char *fmt, ...);
 static void gen_dereference_by_popping_stack(void);
+static void push_reg(char *reg);
+static void pop_reg(char *reg);
 
 void codegen(FILE *output_file, Program *program)
 {
@@ -41,11 +44,11 @@ static void gen_stmt(Stmt *stmt)
     {
     case ST_EXPR:
         gen_expr(stmt->expr);
-        out_newline("  pop rax");
+        pop_reg("rax");
         break;
     case ST_RETURN:
         gen_expr(stmt->expr);
-        out_newline("  pop rax");
+        pop_reg("rax");
         out_newline("  jmp .L.return");
         break;
     case ST_WHILE:
@@ -53,7 +56,7 @@ static void gen_stmt(Stmt *stmt)
         int label = label_num_g++;
         out_newline(".Lbegin%d:", label);
         gen_expr(stmt->cond);
-        out_newline("  pop rax");
+        pop_reg("rax");
         out_newline("  cmp rax, 0");
         out_newline("  je .Lend%d", label);
 
@@ -77,7 +80,7 @@ static void gen_stmt(Stmt *stmt)
         if (stmt->cond != NULL)
         {
             gen_expr(stmt->cond);
-            out_newline("  pop rax");
+            pop_reg("rax");
             out_newline("  cmp rax, 0");
             out_newline("  je .Lend%d", label);
         }
@@ -98,7 +101,7 @@ static void gen_stmt(Stmt *stmt)
         // 条件式をコンパイルし，trueかどうかチェック
         // falseならばelseブロックに飛ぶ
         gen_expr(stmt->cond);
-        out_newline("  pop rax");
+        pop_reg("rax");
         out_newline("  cmp rax, 0");
         out_newline("  je .Lelse%d", label);
         gen_stmt(stmt->then);
@@ -144,8 +147,21 @@ static void gen_expr(Expr *expr)
         break;
     case EX_CALL:
     {
+        int nargs = 0;
+        for (int i = 0; i < expr->args->len; i++)
+        {
+            Expr *arg = expr->args->data[i];
+            gen_expr(arg);
+            nargs++;
+        }
+
+        for (int i = nargs - 1; i >= 0; i--)
+        {
+            pop_reg(arg_reg64_g[i]);
+        }
+
         out_newline("  call %s", expr->copied_name);
-        out_newline("  push rax");
+        push_reg("rax");
         break;
     }
     case EX_UNARY_PLUS:
@@ -171,12 +187,12 @@ static void gen_expr(Expr *expr)
         gen_lvalue(expr->lhs);
         gen_expr(expr->rhs);
 
-        out_newline("  pop rdi");
-        out_newline("  pop rax");
+        pop_reg("rdi");
+        pop_reg("rax");
         out_newline("  mov [rax], rdi");
 
         // 代入式なので，値を生成する必要がある
-        out_newline("  push rdi");
+        push_reg("rdi");
         break;
     default:
         error_at(expr->str, "cannot codegen from it");
@@ -194,7 +210,7 @@ static void gen_lvalue(Expr *expr)
     // 変数のスタックオフセットを計算
     LocalVariable *lv = map_get(local_variables_g, expr->copied_name, expr->length);
     out_newline("  sub rax, %d", lv->stack_offset);
-    out_newline("  push rax");
+    push_reg("rax");
 }
 
 static void gen_binop_expr(Expr *expr)
@@ -205,8 +221,8 @@ static void gen_binop_expr(Expr *expr)
     gen_expr(expr->lhs);
     gen_expr(expr->rhs);
 
-    out_newline("  pop rdi");
-    out_newline("  pop rax");
+    pop_reg("rdi");
+    pop_reg("rax");
 
     switch (expr->kind)
     {
@@ -246,7 +262,7 @@ static void gen_binop_expr(Expr *expr)
         break;
     }
 
-    out_newline("  push rax");
+    push_reg("rax");
 }
 
 static void gen_unary_op_expr(Expr *expr)
@@ -254,7 +270,7 @@ static void gen_unary_op_expr(Expr *expr)
     assert(expr->unary_op);
 
     gen_expr(expr->unary_op);
-    out_newline("  pop rax");
+    pop_reg("rax");
     switch (expr->kind)
     {
 
@@ -268,13 +284,13 @@ static void gen_unary_op_expr(Expr *expr)
         error_at(expr->str, "It's not a unary operation");
         break;
     }
-    out_newline("  push rax");
+    push_reg("rax");
 }
 
 // 関数プロローグの生成
 static void gen_function_prologue(int stack_size)
 {
-    out_newline("  push rbp");
+    push_reg("rbp");
     out_newline("  mov rbp, rsp");
     out_newline("  sub rsp, %d", stack_size);
 }
@@ -283,7 +299,7 @@ static void gen_function_epilogue(void)
 {
     out_newline(".L.return:");
     out_newline("  mov rsp, rbp");
-    out_newline("  pop rbp");
+    pop_reg("rbp");
     out_newline("  ret");
 }
 
@@ -300,9 +316,9 @@ static void gen_compare_rax_and_rdi_by(char *mode)
 // そのアドレスが指す値に置き換える
 static void gen_dereference_by_popping_stack(void)
 {
-    out_newline("  pop rax");
+    pop_reg("rax");
     out_newline("  mov rax, [rax]");
-    out_newline("  push rax");
+    push_reg("rax");
 }
 // output_file_gに文字列を改行付きで書き込む
 static void out_newline(char *fmt, ...)
@@ -312,4 +328,13 @@ static void out_newline(char *fmt, ...)
 
     vfprintf(output_file_g, fmt, ap);
     fprintf(output_file_g, "\n");
+}
+
+static void push_reg(char *reg)
+{
+    out_newline("  push %s", reg);
+}
+static void pop_reg(char *reg)
+{
+    out_newline("  pop %s", reg);
 }

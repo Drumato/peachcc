@@ -107,7 +107,17 @@ static void dump_expr(Expr *e)
     {
     case EX_CALL:
     {
-        fprintf(stderr, "%s()", e->copied_name);
+        fprintf(stderr, "%s(", e->copied_name);
+        for (size_t i = 0; i < e->args->len; i++)
+        {
+            Expr *arg = (Expr *)e->args->data[i];
+            dump_expr(arg);
+            if (i != e->args->len - 1)
+            {
+                fprintf(stderr, ", ");
+            }
+        }
+        fprintf(stderr, ")");
         break;
     }
     case EX_ASSIGN:

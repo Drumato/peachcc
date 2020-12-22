@@ -75,6 +75,7 @@ enum TokenKind
     TK_EQ,         // `==`
     TK_NTEQ,       // `!=`
     TK_ASSIGN,     // `=`
+    TK_COMMA,      // `,`
     TK_SEMICOLON,  // `;`
     TK_INTEGER,    // 整数
     TK_IDENTIFIER, // 識別子
@@ -152,6 +153,8 @@ struct Expr
     ExprKind kind; // 式の型
     Expr *lhs;     // 左辺(2つのオペランドを取るノードで使用)
     Expr *rhs;     // 右辺(2つのオペランドを取るノードで使用)
+
+    Vector *args; // 呼び出し式で使用
 
     Expr *unary_op; // 単項演算で使用
     int value;      // kindがND_INTEGERの場合のみ使う

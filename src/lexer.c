@@ -46,7 +46,7 @@ void tokenize(TokenList *tokens, char *p)
             continue;
         }
 
-        if (strchr("+-*/(){}<>;=", *p) != NULL)
+        if (strchr("+-*/(){}<>;=,", *p) != NULL)
         {
             TokenKind op = char_to_operator(*p);
             push_token(tokens, new_token(op, p++, 1));
@@ -151,6 +151,8 @@ static TokenKind char_to_operator(char op)
         return TK_GE;
     case ';':
         return TK_SEMICOLON;
+    case ',':
+        return TK_COMMA;
     case '=':
         return TK_ASSIGN;
     default:

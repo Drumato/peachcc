@@ -12,6 +12,7 @@ static Expr *prefix_unary(TokenList *tokens);
 static Expr *primary(TokenList *tokens);
 static Expr *paren_expr(TokenList *tokens);
 static Expr *ident_expr(TokenList *tokens, Token *ident_loc);
+static Expr *call_expr(TokenList *tokens, Expr *id);
 
 // assign
 Expr *expression(TokenList *tokens)
@@ -194,12 +195,11 @@ static Expr *ident_expr(TokenList *tokens, Token *ident_loc)
     LocalVariable *lv;
     Expr *id = new_identifier(ident_loc->str, ident_loc->length);
 
-    if (!try_eat(tokens, TK_LPAREN))
+    if (!eatable(tokens, TK_LPAREN))
     {
-        // 普通の識別子としてパース
+        // 普通の識別子
 
-        // ローカル変数として辞書に登録
-        // いずれ宣言の場所にコードを移動する
+        // いずれ宣言のパーサにコードを移動する
         if ((lv = (LocalVariable *)map_get(local_variables_g, ident_loc->str, ident_loc->length)) == NULL)
         {
             total_stack_size_in_fn_g += 8;
@@ -210,8 +210,29 @@ static Expr *ident_expr(TokenList *tokens, Token *ident_loc)
     }
 
     // 呼び出し式のパース
-    // 現在は引数に対応しない
+    return call_expr(tokens, id);
     expect(tokens, TK_RPAREN);
     id->kind = EX_CALL;
+    return id;
+}
+
+// '(' (expression (',' expression)* )? ')'
+static Expr *call_expr(TokenList *tokens, Expr *id)
+{
+    id->kind = EX_CALL;
+    expect(tokens, TK_LPAREN);
+    Vector *args = new_vec();
+
+    while (!try_eat(tokens, TK_RPAREN))
+    {
+        vec_push(args, expression(tokens));
+        if (try_eat(tokens, TK_RPAREN))
+        {
+            break;
+        }
+        expect(tokens, TK_COMMA);
+    }
+    id->args = args;
+
     return id;
 }
