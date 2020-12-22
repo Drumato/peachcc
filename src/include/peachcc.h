@@ -76,6 +76,7 @@ enum TokenKind
     TK_SEMICOLON,  // `;`
     TK_INTEGER,    // 整数
     TK_IDENTIFIER, // 識別子
+    TK_RETURN,     // "return"
     TK_EOF,        // 入力の終わり
 };
 typedef enum TokenKind TokenKind;
@@ -155,7 +156,8 @@ Expr *new_identifier(char *str, size_t length);
 
 enum StmtKind
 {
-    ST_EXPR, // Expression statement.
+    ST_EXPR,   // Expression statement.
+    ST_RETURN, // return statement,
 };
 
 typedef enum StmtKind StmtKind;
@@ -165,12 +167,13 @@ typedef struct Stmt Stmt;
 struct Stmt
 {
     StmtKind kind; // Statementの種類
-    Expr *expr;    // ST_EXPR等で使用
+    Expr *expr;    // ST_EXPR, ST_RETURNで使用
 
     char *loc; // デバッグで使用
 };
 
 Stmt *new_exprstmt(Expr *expr, char *loc);
+Stmt *new_returnstmt(Expr *expr, char *loc);
 
 /// ast/root.c
 

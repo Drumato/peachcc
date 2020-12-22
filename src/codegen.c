@@ -41,6 +41,11 @@ static void gen_stmt(Stmt *stmt)
         gen_expr(stmt->expr);
         out_newline("  pop rax");
         break;
+    case ST_RETURN:
+        gen_expr(stmt->expr);
+        out_newline("  pop rax");
+        out_newline("  jmp .Lend");
+        break;
     default:
         error_at(stmt->loc, "cannot codegen from it");
         break;
@@ -193,6 +198,7 @@ static void gen_function_prologue(int stack_size)
 // 関数エピローグの生成
 static void gen_function_epilogue(void)
 {
+    out_newline(".Lend:");
     out_newline("  mov rsp, rbp");
     out_newline("  pop rbp");
     out_newline("  ret");

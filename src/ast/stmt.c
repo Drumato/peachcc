@@ -8,6 +8,12 @@ Stmt *new_exprstmt(Expr *expr, char *loc)
     s->expr = expr;
     return s;
 }
+Stmt *new_returnstmt(Expr *expr, char *loc)
+{
+    Stmt *s = new_stmt(ST_RETURN, loc);
+    s->expr = expr;
+    return s;
+}
 
 static Stmt *new_stmt(StmtKind k, char *loc)
 {

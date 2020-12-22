@@ -3,6 +3,7 @@
 static TokenKind char_to_operator(char op);
 static Token *multilength_symbol(char *ptr);
 static Token *identifier(char *ptr);
+static Token *c_keyword(char *ptr);
 
 void tokenize(TokenList *tokens, char *p)
 {
@@ -19,6 +20,15 @@ void tokenize(TokenList *tokens, char *p)
             continue;
         }
 
+        // 識別子よりも先に予約語のチェック
+        Token *t;
+        if ((t = c_keyword(p)) != NULL)
+        {
+            p += t->length;
+            push_token(tokens, t);
+            continue;
+        }
+
         if (isalpha(*p) || *p == '_')
         {
             Token *id = identifier(p);
@@ -29,7 +39,6 @@ void tokenize(TokenList *tokens, char *p)
 
         // 先に二文字以上の記号をtokenize可能かチェックすることで，
         // 一文字の記号のtokinizeがstrchr()で簡略化できる．
-        Token *t;
         if ((t = multilength_symbol(p)) != NULL)
         {
             p += t->length;
@@ -87,8 +96,29 @@ static Token *multilength_symbol(char *ptr)
     {
         if (!strncmp(ptr, symbols[i], strlen(symbols[i])))
         {
-            char *p = ptr;
-            return new_token(kinds[i], p, 2);
+            return new_token(kinds[i], ptr, 2);
+        }
+    }
+
+    return NULL;
+}
+
+// 識別子のスキャン
+static Token *c_keyword(char *ptr)
+{
+    char *keywords[] = {"return", NULL};
+    TokenKind kinds[] = {TK_RETURN};
+    // 必ずkeywords[i] != NULLと比較すること．
+    // kindsとkeywordsには要素数の差がある(len(keywords == len(kinds) - 1))
+
+    for (size_t i = 0; keywords[i] != NULL; i++)
+    {
+        size_t keyword_len = strlen(keywords[i]);
+        bool starts_with_keyword = !strncmp(ptr, keywords[i], keyword_len);
+        bool is_not_an_identifier = !isalnum(ptr[keyword_len]) && ptr[keyword_len] != '_';
+        if (starts_with_keyword && is_not_an_identifier)
+        {
+            return new_token(kinds[i], ptr, keyword_len);
         }
     }
 

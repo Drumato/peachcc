@@ -32,6 +32,11 @@ static void dump_stmt(Stmt *s, int indent)
     assert(s);
     switch (s->kind)
     {
+    case ST_RETURN:
+        fprintf(stderr, "ReturnStmt(");
+        dump_expr(s->expr, indent);
+        fprintf(stderr, ");\n");
+        break;
     case ST_EXPR:
         fprintf(stderr, "ExprStmt(");
         dump_expr(s->expr, indent);
