@@ -11,6 +11,7 @@ static Expr *multiplication(TokenList *tokens);
 static Expr *prefix_unary(TokenList *tokens);
 static Expr *primary(TokenList *tokens);
 static Expr *paren_expr(TokenList *tokens);
+static Expr *ident_expr(TokenList *tokens, Token *ident_loc);
 
 // assign
 Expr *expression(TokenList *tokens)
@@ -167,19 +168,9 @@ static Expr *primary(TokenList *tokens)
     }
 
     Token *ident_loc;
-    LocalVariable *lv;
     if ((ident_loc = try_eat_identifier(tokens)) != NULL)
     {
-        Expr *id = new_identifier(ident_loc->str, ident_loc->length);
-
-        // いずれ宣言の場所にコードを移動する
-        if ((lv = (LocalVariable *)map_get(local_variables_g, ident_loc->str, ident_loc->length)) == NULL)
-        {
-            total_stack_size_in_fn_g += 8;
-            lv = new_local_var(ident_loc->str, ident_loc->length, total_stack_size_in_fn_g);
-            map_put(local_variables_g, ident_loc->str, lv);
-        }
-        return id;
+        return ident_expr(tokens, ident_loc);
     }
 
     char *loc = cur_g->str;
@@ -195,4 +186,32 @@ static Expr *paren_expr(TokenList *tokens)
     expect(tokens, TK_RPAREN);
 
     return e;
+}
+
+/// identifier | call_expr
+static Expr *ident_expr(TokenList *tokens, Token *ident_loc)
+{
+    LocalVariable *lv;
+    Expr *id = new_identifier(ident_loc->str, ident_loc->length);
+
+    if (!try_eat(tokens, TK_LPAREN))
+    {
+        // 普通の識別子としてパース
+
+        // ローカル変数として辞書に登録
+        // いずれ宣言の場所にコードを移動する
+        if ((lv = (LocalVariable *)map_get(local_variables_g, ident_loc->str, ident_loc->length)) == NULL)
+        {
+            total_stack_size_in_fn_g += 8;
+            lv = new_local_var(ident_loc->str, ident_loc->length, total_stack_size_in_fn_g);
+            map_put(local_variables_g, ident_loc->str, lv);
+        }
+        return id;
+    }
+
+    // 呼び出し式のパース
+    // 現在は引数に対応しない
+    expect(tokens, TK_RPAREN);
+    id->kind = EX_CALL;
+    return id;
 }

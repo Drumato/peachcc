@@ -105,6 +105,11 @@ static void dump_expr(Expr *e)
     assert(e);
     switch (e->kind)
     {
+    case EX_CALL:
+    {
+        fprintf(stderr, "%s()", e->copied_name);
+        break;
+    }
     case EX_ASSIGN:
         dump_expr(e->lhs);
         fprintf(stderr, " = ");
@@ -173,10 +178,7 @@ static void dump_expr(Expr *e)
         break;
     case EX_LOCAL_VAR:
     {
-        char buf[1024];
-        strncpy(buf, e->str, e->length);
-        buf[e->length] = 0;
-        fprintf(stderr, "%s", buf);
+        fprintf(stderr, "%s", e->copied_name);
         break;
     }
     }

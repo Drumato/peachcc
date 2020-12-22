@@ -134,6 +134,7 @@ typedef enum
     EX_UNARY_PLUS,  // 単項+
     EX_UNARY_MINUS, // 単項-
     EX_INTEGER,     // 整数リテラル
+    EX_CALL,        // 呼び出し式
     EX_LOCAL_VAR,   // 識別子
     EX_ASSIGN,      // 代入式
 } ExprKind;
@@ -143,7 +144,10 @@ typedef struct Expr Expr;
 // 式を表すASTノードの型
 struct Expr
 {
-    char *str;     // 変数名やデバッグで使用
+    char *str; // デバッグで使用
+    // 変数名で使用
+    // コピーされているのでそのまま出力可能
+    char *copied_name;
     size_t length; // 変数名の長さ等
     ExprKind kind; // 式の型
     Expr *lhs;     // 左辺(2つのオペランドを取るノードで使用)

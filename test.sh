@@ -1,6 +1,14 @@
 #!/bin/bash
 make > /dev/null
 
+# ライブラリの整備
+cat <<EOF | gcc -xc -c -o tmp2.o -
+int ret3() { return 3; }
+int ret5() { return 5; }
+EOF
+
+
+
 assert() {
   expected="$1"
   input="$2"
@@ -12,7 +20,7 @@ assert() {
   # コンパイル & 実行
   # 終了ステータスをもらう
   ./peachcc -i $tmp_c_file -o asm.s
-  gcc -static -o tmp asm.s
+  gcc -static -o tmp asm.s tmp2.o
   ./tmp
   actual="$?"
 
@@ -27,11 +35,14 @@ assert() {
 
 assert 0 "{ return 0; }"
 assert 42 "{ return 42; }"
+
 assert 21 '{ return 5+20-4; }'
 assert 41 '{ return  12 + 34 - 5 ; }'
 assert 47 '{ return 5+6*7; }'
+
 assert 15 '{ return 5*(9-6); }'
 assert 4 '{ return (3+5)/2; }'
+
 assert 10 '{ return -10+20; }'
 assert 10 '{ return - -10; }'
 assert 10 '{ return - - +10; }'
@@ -60,6 +71,7 @@ assert 3 '{ 1; 2; return 3; }'
 assert 3 '{ a=3; return a; }'
 assert 8 '{ a=3; z=5; return a+z; }'
 assert 6 '{ a=b=3; return a+b; }'
+
 assert 3 '{ foo=3; return foo; }'
 assert 3 '{ FOO=3; return FOO; }'
 assert 3 '{ _foo=3; return _foo; }'
@@ -76,6 +88,9 @@ assert 55 '{ i=0; j=0; for (i=0; i<=10; i=i+1) j=i+j; return j; }'
 assert 3 '{ for (;;) {return 3;} return 5; }'
 
 assert 10 '{ i=0; while(i<10) { i=i+1; } return i; }'
+
+assert 3 '{ return ret3(); }'
+assert 5 '{ return ret5(); }'
 
 echo -e "\e[33mAll Test Passed.\e[0m"
 

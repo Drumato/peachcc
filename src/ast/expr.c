@@ -26,6 +26,9 @@ Expr *new_integer(int value, char *str)
 Expr *new_identifier(char *str, size_t length)
 {
     Expr *e = new_expr(EX_LOCAL_VAR, str);
+    e->copied_name = (char *)calloc(length, sizeof(char));
+    strncpy(e->copied_name, str, length);
+    e->copied_name[length] = 0;
     e->length = length;
     return e;
 }

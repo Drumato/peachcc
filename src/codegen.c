@@ -142,6 +142,12 @@ static void gen_expr(Expr *expr)
         gen_lvalue(expr);
         gen_dereference_by_popping_stack();
         break;
+    case EX_CALL:
+    {
+        out_newline("  call %s", expr->copied_name);
+        out_newline("  push rax");
+        break;
+    }
     case EX_UNARY_PLUS:
         gen_unary_op_expr(expr);
         break;
@@ -186,7 +192,7 @@ static void gen_lvalue(Expr *expr)
     out_newline("  mov rax, rbp");
 
     // 変数のスタックオフセットを計算
-    LocalVariable *lv = map_get(local_variables_g, expr->str, expr->length);
+    LocalVariable *lv = map_get(local_variables_g, expr->copied_name, expr->length);
     out_newline("  sub rax, %d", lv->stack_offset);
     out_newline("  push rax");
 }
