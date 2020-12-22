@@ -2,7 +2,7 @@
 #include "peachcc.h"
 
 // expr parsers;
-Expr *expr(TokenList *tokens);
+Expr *expression(TokenList *tokens);
 static Expr *assign(TokenList *tokens);
 static Expr *equality(TokenList *tokens);
 static Expr *relation(TokenList *tokens);
@@ -13,7 +13,7 @@ static Expr *primary(TokenList *tokens);
 static Expr *paren_expr(TokenList *tokens);
 
 // assign
-Expr *expr(TokenList *tokens)
+Expr *expression(TokenList *tokens)
 {
     return assign(tokens);
 }
@@ -191,7 +191,7 @@ static Expr *primary(TokenList *tokens)
 static Expr *paren_expr(TokenList *tokens)
 {
     expect(tokens, TK_LPAREN);
-    Expr *e = expr(tokens);
+    Expr *e = expression(tokens);
     expect(tokens, TK_RPAREN);
 
     return e;

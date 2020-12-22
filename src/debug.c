@@ -32,13 +32,26 @@ static void dump_stmt(Stmt *s, int indent)
     assert(s);
     switch (s->kind)
     {
+    case ST_IF:
+        fprintf(stderr, "%*sIfStmt(expr: ", indent, " ");
+        dump_expr(s->expr, indent);
+        fprintf(stderr, ")\n");
+
+        dump_stmt(s->then, indent + 4);
+        if (s->els != NULL)
+        {
+            fprintf(stderr, "ElseBlock:\n");
+            dump_stmt(s->els, indent + 4);
+        }
+
+        break;
     case ST_RETURN:
-        fprintf(stderr, "%*sReturnStmt(", indent, " ");
+        fprintf(stderr, "%*sReturnStmt(expr: ", indent, " ");
         dump_expr(s->expr, indent);
         fprintf(stderr, ");\n");
         break;
     case ST_EXPR:
-        fprintf(stderr, "%*sExprStmt(", indent, " ");
+        fprintf(stderr, "%*sExprStmt(expr: ", indent, " ");
         dump_expr(s->expr, indent);
         fprintf(stderr, ");\n");
         break;

@@ -106,8 +106,8 @@ static Token *multilength_symbol(char *ptr)
 // 識別子のスキャン
 static Token *c_keyword(char *ptr)
 {
-    char *keywords[] = {"return", NULL};
-    TokenKind kinds[] = {TK_RETURN};
+    char *keywords[] = {"return", "if", "else", NULL};
+    TokenKind kinds[] = {TK_RETURN, TK_IF, TK_ELSE};
     // 必ずkeywords[i] != NULLと比較すること．
     // kindsとkeywordsには要素数の差がある(len(keywords == len(kinds) - 1))
 

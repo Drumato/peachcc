@@ -1,6 +1,7 @@
 #include "peachcc.h"
 
-FILE *output_file_g;
+static FILE *output_file_g;
+static int label_num_g;
 
 static void gen_stmt(Stmt *stmt);
 
@@ -16,6 +17,7 @@ static void gen_dereference_by_popping_stack(void);
 
 void codegen(FILE *output_file, Program *program)
 {
+    label_num_g = 0;
     output_file_g = output_file;
 
     out_newline(".intel_syntax noprefix");
@@ -44,8 +46,32 @@ static void gen_stmt(Stmt *stmt)
     case ST_RETURN:
         gen_expr(stmt->expr);
         out_newline("  pop rax");
-        out_newline("  jmp .Lend");
+        out_newline("  jmp .L.return");
         break;
+    case ST_IF:
+    {
+        int label = label_num_g++;
+
+        // 条件式をコンパイルし，trueかどうかチェック
+        gen_expr(stmt->expr);
+        out_newline("  pop rax");
+        out_newline("  cmp rax, 0");
+        out_newline("  je .Lelse%d", label);
+        gen_stmt(stmt->then);
+
+        out_newline("  jmp .Lend%d", label);
+
+        // elseの無いif文の場合，何もしないブロックが出来上がる
+        out_newline(".Lelse%d:", label);
+        if (stmt->els != NULL)
+        {
+            gen_stmt(stmt->els);
+        }
+
+        out_newline(".Lend%d:", label);
+        break;
+    }
+
     case ST_COMPOUND:
         for (size_t i = 0; i < stmt->body->len; i++)
         {
@@ -205,7 +231,7 @@ static void gen_function_prologue(int stack_size)
 // 関数エピローグの生成
 static void gen_function_epilogue(void)
 {
-    out_newline(".Lend:");
+    out_newline(".L.return:");
     out_newline("  mov rsp, rbp");
     out_newline("  pop rbp");
     out_newline("  ret");

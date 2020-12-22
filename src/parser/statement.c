@@ -3,6 +3,7 @@
 static Stmt *expr_stmt(TokenList *tokens);
 static Stmt *return_stmt(TokenList *tokens);
 static Stmt *compound_stmt(TokenList *tokens);
+static Stmt *if_stmt(TokenList *tokens);
 
 Stmt *statement(TokenList *tokens)
 {
@@ -12,6 +13,8 @@ Stmt *statement(TokenList *tokens)
         return return_stmt(tokens);
     case TK_LBRACKET:
         return compound_stmt(tokens);
+    case TK_IF:
+        return if_stmt(tokens);
     default:
         return expr_stmt(tokens);
     }
@@ -22,11 +25,34 @@ static Stmt *return_stmt(TokenList *tokens)
 {
     char *loc = cur_g->str;
     expect(tokens, TK_RETURN);
-    Expr *e = expr(tokens);
+    Expr *e = expression(tokens);
     expect(tokens, TK_SEMICOLON);
     Stmt *s = new_stmt(ST_RETURN, loc);
     s->expr = e;
     return s;
+}
+
+// if" '(' expression ')' statement ("else" statement)?
+static Stmt *if_stmt(TokenList *tokens)
+{
+    char *loc = cur_g->str;
+    expect(tokens, TK_IF);
+    expect(tokens, TK_LPAREN);
+    Expr *condition = expression(tokens);
+    expect(tokens, TK_RPAREN);
+
+    Stmt *then = statement(tokens);
+    Stmt *if_s = new_stmt(ST_IF, loc);
+    if_s->expr = condition;
+    if_s->then = then;
+
+    if (!try_eat(tokens, TK_ELSE))
+    {
+        return if_s;
+    }
+    if_s->els = statement(tokens);
+
+    return if_s;
 }
 
 // '{' statement* '}'
@@ -49,7 +75,7 @@ static Stmt *compound_stmt(TokenList *tokens)
 static Stmt *expr_stmt(TokenList *tokens)
 {
     char *loc = cur_g->str;
-    Expr *e = expr(tokens);
+    Expr *e = expression(tokens);
     expect(tokens, TK_SEMICOLON);
     Stmt *s = new_stmt(ST_EXPR, loc);
     s->expr = e;

@@ -79,6 +79,8 @@ enum TokenKind
     TK_INTEGER,    // 整数
     TK_IDENTIFIER, // 識別子
     TK_RETURN,     // "return"
+    TK_IF,         // "if"
+    TK_ELSE,       // "else"
     TK_EOF,        // 入力の終わり
 };
 typedef enum TokenKind TokenKind;
@@ -158,8 +160,9 @@ Expr *new_identifier(char *str, size_t length);
 
 enum StmtKind
 {
-    ST_EXPR,     // Expression statement.
-    ST_RETURN,   // return statement,
+    ST_EXPR,     // Expression statement
+    ST_RETURN,   // return statement
+    ST_IF,       // if statement
     ST_COMPOUND, // Compound statement
 };
 
@@ -172,6 +175,9 @@ struct Stmt
     StmtKind kind; // Statementの種類
     Expr *expr;    // ST_EXPR, ST_RETURNで使用
     Vector *body;  // ST_BLOCK等で使用
+
+    Stmt *then; // ST_IF等で使用
+    Stmt *els;  // ST_IF等で使用
 
     char *loc; // デバッグで使用
 };
@@ -235,7 +241,7 @@ Stmt *statement(TokenList *tokens);
 
 /// parser/expression.c
 
-Expr *expr(TokenList *tokens);
+Expr *expression(TokenList *tokens);
 
 /// codegen.c
 void codegen(FILE *output_file, Program *program);
