@@ -48,12 +48,41 @@ static void gen_stmt(Stmt *stmt)
         out_newline("  pop rax");
         out_newline("  jmp .L.return");
         break;
+    case ST_FOR:
+    {
+        int label = label_num_g++;
+        if (stmt->init != NULL)
+        {
+            gen_expr(stmt->init);
+        }
+
+        // 条件式をコンパイルしてtrueかチェック
+        // そうであればforループを抜ける
+        out_newline(".Lbegin%d:", label);
+        if (stmt->cond != NULL)
+        {
+            gen_expr(stmt->cond);
+            out_newline("  pop rax");
+            out_newline("  cmp rax, 0");
+            out_newline("  je .Lend%d", label);
+        }
+
+        gen_stmt(stmt->then);
+        if (stmt->inc != NULL)
+        {
+            gen_expr(stmt->inc);
+        }
+        out_newline("  jmp .Lbegin%d", label);
+        out_newline(".Lend%d:", label);
+        break;
+    }
     case ST_IF:
     {
         int label = label_num_g++;
 
         // 条件式をコンパイルし，trueかどうかチェック
-        gen_expr(stmt->expr);
+        // falseならばelseブロックに飛ぶ
+        gen_expr(stmt->cond);
         out_newline("  pop rax");
         out_newline("  cmp rax, 0");
         out_newline("  je .Lelse%d", label);

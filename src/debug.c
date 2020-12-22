@@ -1,7 +1,7 @@
 #include "peachcc.h"
 
 static void dump_stmt(Stmt *s, int indent);
-static void dump_expr(Expr *e, int indent);
+static void dump_expr(Expr *e);
 
 void error_at(char *loc, char *fmt, ...)
 {
@@ -34,7 +34,7 @@ static void dump_stmt(Stmt *s, int indent)
     {
     case ST_IF:
         fprintf(stderr, "%*sIfStmt(expr: ", indent, " ");
-        dump_expr(s->expr, indent);
+        dump_expr(s->expr);
         fprintf(stderr, ")\n");
 
         dump_stmt(s->then, indent + 4);
@@ -45,14 +45,38 @@ static void dump_stmt(Stmt *s, int indent)
         }
 
         break;
+    case ST_FOR:
+        fprintf(stderr, "%*sForStmt(", indent, " ");
+        if (s->init != NULL)
+        {
+            fprintf(stderr, "init: ");
+            dump_expr(s->init);
+            fprintf(stderr, "; ");
+        }
+        if (s->cond != NULL)
+        {
+            fprintf(stderr, "cond: ");
+            dump_expr(s->cond);
+            fprintf(stderr, "; ");
+        }
+        if (s->inc != NULL)
+        {
+            fprintf(stderr, "inc: ");
+            dump_expr(s->inc);
+        }
+        fprintf(stderr, ")\n");
+
+        dump_stmt(s->then, indent + 4);
+
+        break;
     case ST_RETURN:
         fprintf(stderr, "%*sReturnStmt(expr: ", indent, " ");
-        dump_expr(s->expr, indent);
+        dump_expr(s->expr);
         fprintf(stderr, ");\n");
         break;
     case ST_EXPR:
         fprintf(stderr, "%*sExprStmt(expr: ", indent, " ");
-        dump_expr(s->expr, indent);
+        dump_expr(s->expr);
         fprintf(stderr, ");\n");
         break;
     case ST_COMPOUND:
@@ -68,73 +92,73 @@ static void dump_stmt(Stmt *s, int indent)
 }
 
 // Exprを標準エラー出力にダンプする
-static void dump_expr(Expr *e, int indent)
+static void dump_expr(Expr *e)
 {
     assert(e);
     switch (e->kind)
     {
     case EX_ASSIGN:
-        dump_expr(e->lhs, indent);
+        dump_expr(e->lhs);
         fprintf(stderr, " = ");
-        dump_expr(e->rhs, indent);
+        dump_expr(e->rhs);
         break;
     case EX_ADD:
-        dump_expr(e->lhs, indent);
+        dump_expr(e->lhs);
         fprintf(stderr, " + ");
-        dump_expr(e->rhs, indent);
+        dump_expr(e->rhs);
         break;
     case EX_SUB:
-        dump_expr(e->lhs, indent);
+        dump_expr(e->lhs);
         fprintf(stderr, " - ");
-        dump_expr(e->rhs, indent);
+        dump_expr(e->rhs);
         break;
     case EX_MUL:
-        dump_expr(e->lhs, indent);
+        dump_expr(e->lhs);
         fprintf(stderr, " * ");
-        dump_expr(e->rhs, indent);
+        dump_expr(e->rhs);
         break;
     case EX_DIV:
-        dump_expr(e->lhs, indent);
+        dump_expr(e->lhs);
         fprintf(stderr, " / ");
-        dump_expr(e->rhs, indent);
+        dump_expr(e->rhs);
         break;
     case EX_LE:
-        dump_expr(e->lhs, indent);
+        dump_expr(e->lhs);
         fprintf(stderr, " < ");
-        dump_expr(e->rhs, indent);
+        dump_expr(e->rhs);
         break;
     case EX_GE:
-        dump_expr(e->lhs, indent);
+        dump_expr(e->lhs);
         fprintf(stderr, " > ");
-        dump_expr(e->rhs, indent);
+        dump_expr(e->rhs);
         break;
     case EX_LEEQ:
-        dump_expr(e->lhs, indent);
+        dump_expr(e->lhs);
         fprintf(stderr, " <= ");
-        dump_expr(e->rhs, indent);
+        dump_expr(e->rhs);
         break;
     case EX_GEEQ:
-        dump_expr(e->lhs, indent);
+        dump_expr(e->lhs);
         fprintf(stderr, " >= ");
-        dump_expr(e->rhs, indent);
+        dump_expr(e->rhs);
         break;
     case EX_EQ:
-        dump_expr(e->lhs, indent);
+        dump_expr(e->lhs);
         fprintf(stderr, " == ");
-        dump_expr(e->rhs, indent);
+        dump_expr(e->rhs);
         break;
     case EX_NTEQ:
-        dump_expr(e->lhs, indent);
+        dump_expr(e->lhs);
         fprintf(stderr, " != ");
-        dump_expr(e->rhs, indent);
+        dump_expr(e->rhs);
         break;
     case EX_UNARY_PLUS:
         fprintf(stderr, "+ ");
-        dump_expr(e->unary_op, indent);
+        dump_expr(e->unary_op);
         break;
     case EX_UNARY_MINUS:
         fprintf(stderr, "- ");
-        dump_expr(e->unary_op, indent);
+        dump_expr(e->unary_op);
         break;
     case EX_INTEGER:
         fprintf(stderr, "%d", e->value);

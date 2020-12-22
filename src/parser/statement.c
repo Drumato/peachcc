@@ -4,6 +4,7 @@ static Stmt *expr_stmt(TokenList *tokens);
 static Stmt *return_stmt(TokenList *tokens);
 static Stmt *compound_stmt(TokenList *tokens);
 static Stmt *if_stmt(TokenList *tokens);
+static Stmt *for_stmt(TokenList *tokens);
 
 Stmt *statement(TokenList *tokens)
 {
@@ -15,6 +16,8 @@ Stmt *statement(TokenList *tokens)
         return compound_stmt(tokens);
     case TK_IF:
         return if_stmt(tokens);
+    case TK_FOR:
+        return for_stmt(tokens);
     default:
         return expr_stmt(tokens);
     }
@@ -43,7 +46,7 @@ static Stmt *if_stmt(TokenList *tokens)
 
     Stmt *then = statement(tokens);
     Stmt *if_s = new_stmt(ST_IF, loc);
-    if_s->expr = condition;
+    if_s->cond = condition;
     if_s->then = then;
 
     if (!try_eat(tokens, TK_ELSE))
@@ -53,6 +56,35 @@ static Stmt *if_stmt(TokenList *tokens)
     if_s->els = statement(tokens);
 
     return if_s;
+}
+
+// "for" '(' expression? ';' expression? ';' expression?')' statement
+static Stmt *for_stmt(TokenList *tokens)
+{
+    char *loc = cur_g->str;
+
+    expect(tokens, TK_FOR);
+    expect(tokens, TK_LPAREN);
+    Stmt *s = new_stmt(ST_FOR, loc);
+    if (!try_eat(tokens, TK_SEMICOLON))
+    {
+        s->init = expression(tokens);
+        expect(tokens, TK_SEMICOLON);
+    }
+    if (!try_eat(tokens, TK_SEMICOLON))
+    {
+        s->cond = expression(tokens);
+        expect(tokens, TK_SEMICOLON);
+    }
+    if (!try_eat(tokens, TK_RPAREN))
+    {
+        s->inc = expression(tokens);
+        expect(tokens, TK_RPAREN);
+    }
+
+    s->then = statement(tokens);
+
+    return s;
 }
 
 // '{' statement* '}'
