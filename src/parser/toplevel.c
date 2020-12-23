@@ -39,16 +39,6 @@ static Function *function(TokenList *tokens)
 
     Vector *stmts = compound_stmt(tokens);
 
-    // とりあえずパーサでスタックに割り当ててしまう
-    LocalVariable *lv;
-    size_t total_stack_size = total_stack_size_in_fn_g;
-    for (size_t i = 0; i < local_variables_in_cur_fn_g->keys->len; i++)
-    {
-        lv = local_variables_in_cur_fn_g->vals->data[i];
-        lv->stack_offset = total_stack_size;
-        total_stack_size -= lv->cty->size;
-    }
-
     f->stmts = stmts;
     f->params = params;
     f->stack_size = total_stack_size_in_fn_g;

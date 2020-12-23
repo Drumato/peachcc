@@ -147,75 +147,103 @@ static void dump_expr(Expr *e)
         break;
     }
     case EX_ASSIGN:
+        fprintf(stderr, "AssignExpr(");
         dump_expr(e->lhs);
-        fprintf(stderr, " = ");
+        fprintf(stderr, ", ");
         dump_expr(e->rhs);
+        fprintf(stderr, ")");
         break;
     case EX_ADD:
+        fprintf(stderr, "AddExpr(");
         dump_expr(e->lhs);
-        fprintf(stderr, " + ");
+        fprintf(stderr, ", ");
         dump_expr(e->rhs);
+        fprintf(stderr, ")");
         break;
     case EX_SUB:
+        fprintf(stderr, "SubExpr(");
         dump_expr(e->lhs);
-        fprintf(stderr, " - ");
+        fprintf(stderr, ", ");
         dump_expr(e->rhs);
+        fprintf(stderr, ")");
         break;
     case EX_MUL:
+        fprintf(stderr, "MulExpr(");
         dump_expr(e->lhs);
-        fprintf(stderr, " * ");
+        fprintf(stderr, ", ");
         dump_expr(e->rhs);
+        fprintf(stderr, ")");
         break;
     case EX_DIV:
+        fprintf(stderr, "DivExpr(");
         dump_expr(e->lhs);
-        fprintf(stderr, " / ");
+        fprintf(stderr, ", ");
         dump_expr(e->rhs);
+        fprintf(stderr, ")");
         break;
     case EX_LE:
+        fprintf(stderr, "LessThanExpr(");
         dump_expr(e->lhs);
-        fprintf(stderr, " < ");
+        fprintf(stderr, ", ");
         dump_expr(e->rhs);
+        fprintf(stderr, ")");
         break;
     case EX_GE:
+        fprintf(stderr, "GreaterThanExpr(");
         dump_expr(e->lhs);
-        fprintf(stderr, " > ");
+        fprintf(stderr, ", ");
         dump_expr(e->rhs);
+        fprintf(stderr, ")");
         break;
     case EX_LEEQ:
+        fprintf(stderr, "LessThanEqualExpr(");
         dump_expr(e->lhs);
-        fprintf(stderr, " <= ");
+        fprintf(stderr, ", ");
         dump_expr(e->rhs);
+        fprintf(stderr, ")");
         break;
     case EX_GEEQ:
+        fprintf(stderr, "GreaterThanEqualExpr(");
         dump_expr(e->lhs);
-        fprintf(stderr, " >= ");
+        fprintf(stderr, ", ");
         dump_expr(e->rhs);
+        fprintf(stderr, ")");
         break;
     case EX_EQ:
+        fprintf(stderr, "EqualExpr(");
         dump_expr(e->lhs);
-        fprintf(stderr, " == ");
+        fprintf(stderr, ", ");
         dump_expr(e->rhs);
+        fprintf(stderr, ")");
         break;
     case EX_NTEQ:
+        fprintf(stderr, "NotEqualExpr(");
         dump_expr(e->lhs);
-        fprintf(stderr, " != ");
+        fprintf(stderr, ", ");
         dump_expr(e->rhs);
+        fprintf(stderr, ")");
         break;
     case EX_UNARY_PLUS:
-        fprintf(stderr, "+ ");
+        fprintf(stderr, "UnaryPlusExpr(");
+
         dump_expr(e->unary_op);
+        fprintf(stderr, ")");
         break;
     case EX_UNARY_MINUS:
-        fprintf(stderr, "- ");
+        fprintf(stderr, "UnaryMinusExpr(");
+
         dump_expr(e->unary_op);
+        fprintf(stderr, ")");
         break;
     case EX_UNARY_ADDR:
-        fprintf(stderr, "& ");
+        fprintf(stderr, "UnaryAddrExpr(");
         dump_expr(e->unary_op);
+        fprintf(stderr, ")");
         break;
     case EX_UNARY_DEREF:
-        fprintf(stderr, "* ");
+        fprintf(stderr, "UnaryDerefExpr(");
         dump_expr(e->unary_op);
+        fprintf(stderr, ")");
         break;
     case EX_INTEGER:
         fprintf(stderr, "%d", e->value);

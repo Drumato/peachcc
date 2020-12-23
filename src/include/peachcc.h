@@ -176,7 +176,9 @@ struct Expr
     Expr *lhs;     // 左辺(2つのオペランドを取るノードで使用)
     Expr *rhs;     // 右辺(2つのオペランドを取るノードで使用)
 
-    Vector *params; // 呼び出し式で使用
+    // 呼び出し式で使用
+    // Expr *のリスト
+    Vector *params;
 
     Expr *unary_op; // 単項演算で使用
     int value;      // kindがND_INTEGERの場合のみ使う
@@ -206,11 +208,11 @@ typedef struct Stmt Stmt;
 struct Stmt
 {
     StmtKind kind; // Statementの種類
-    Expr *expr;    // ST_EXPR, ST_RETURN, ST_IF, ST_FORで使用
+    Expr *expr;    // ST_EXPR, ST_RETURNで使用
     Expr *cond;    // 条件式．ST_WHILE, ST_IF, ST_FORで使用
     Expr *init;    // 初期化式．ST_FORで使用
     Expr *inc;     // ST_FORで使用
-    Vector *body;  // ST_BLOCK等で使用
+    Vector *body;  // ST_COMPOUND等で使用
 
     Stmt *then; // ST_IF, ST_WHILE, ST_FOR等で使用
     Stmt *els;  // ST_IF等で使用
@@ -317,6 +319,10 @@ Vector *parameter_list(TokenList *tokens);
 /// parser/expression.c
 
 Expr *expression(TokenList *tokens);
+
+/// analyze.c
+
+void analyze(Program *program);
 
 /// codegen.c
 void codegen(FILE *output_file, Program *program);

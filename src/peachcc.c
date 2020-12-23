@@ -31,6 +31,8 @@ int main(int argc, char **argv)
         dump_ast(program);
     }
 
+    analyze(program);
+
     // アセンブリの書き込み先のopen
     FILE *output_file;
     if ((output_file = fopen(peachcc_opt_g->output_file, "w")) == NULL)
