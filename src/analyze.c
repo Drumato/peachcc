@@ -97,6 +97,12 @@ static CType *walk_expr(Expr **e)
         assert(lv);
         return lv->cty;
     }
+    case EX_UNARY_SIZEOF:
+    {
+        CType *cty = walk_expr(&(*e)->unary_op);
+        *e = new_integer(cty->size, (*e)->str);
+        return new_ctype(TY_INT, 8);
+    }
     case EX_CALL:
     {
         for (size_t i = 0; i < (*e)->params->len; i++)

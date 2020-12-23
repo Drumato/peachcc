@@ -86,6 +86,7 @@ enum TokenKind
     TK_ELSE,            // "else"
     TK_FOR,             // "for"
     TK_WHILE,           // "while"
+    TK_SIZEOF,          // "sizeof"
     TK_EOF,             // 入力の終わり
 };
 typedef enum TokenKind TokenKind;
@@ -160,6 +161,9 @@ typedef enum
     EX_CALL,        // 呼び出し式
     EX_LOCAL_VAR,   // 識別子
     EX_ASSIGN,      // 代入式
+    // sizeof 演算子
+    // analyze() によって変換されるので注意
+    EX_UNARY_SIZEOF,
 } ExprKind;
 
 typedef struct Expr Expr;

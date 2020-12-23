@@ -146,6 +146,11 @@ static void dump_expr(Expr *e)
         fprintf(stderr, ")");
         break;
     }
+    case EX_UNARY_SIZEOF:
+        fprintf(stderr, "SizeofExpr(");
+        dump_expr(e->unary_op);
+        fprintf(stderr, ")");
+        break;
     case EX_ASSIGN:
         fprintf(stderr, "AssignExpr(");
         dump_expr(e->lhs);

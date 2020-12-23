@@ -146,7 +146,7 @@ static Expr *multiplication(TokenList *tokens)
     return e;
 }
 
-// ('+' | '-' | '*' | '&')? prefix_unary
+// ('+' | '-' | '*' | '&' | "sizeof")? prefix_unary
 static Expr *prefix_unary(TokenList *tokens)
 {
     Expr *e;
@@ -159,6 +159,8 @@ static Expr *prefix_unary(TokenList *tokens)
         e = new_unop(EX_UNARY_DEREF, prefix_unary(tokens), cur_g->str);
     else if (try_eat(tokens, TK_AMPERSAND))
         e = new_unop(EX_UNARY_ADDR, prefix_unary(tokens), cur_g->str);
+    else if (try_eat(tokens, TK_SIZEOF))
+        e = new_unop(EX_UNARY_SIZEOF, prefix_unary(tokens), cur_g->str);
     else
         e = primary(tokens);
     return e;

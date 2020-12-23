@@ -105,6 +105,19 @@ assert 7 'int main(){ int x; int y; x=3; y=5; *(&x+1)=7; return y; }'
 assert 7 'int main(){ int x; int y; x=3; y=5; *(&y-2+1)=7; return x; }'
 assert 5 'int main(){ int x; x=3; return (&x+2)-&x+3; }'
 
+assert 8 'int main() { int x; return sizeof(x); }'
+assert 8 'int main() { int x; return sizeof x; }'
+assert 8 'int main() { int *x; return sizeof(x); }'
+# assert 32 'int main() { int x[4]; return sizeof(x); }'
+# assert 96 'int main() { int x[3][4]; return sizeof(x); }'
+# assert 32 'int main() { int x[3][4]; return sizeof(*x); }'
+# assert 8 'int main() { int x[3][4]; return sizeof(**x); }'
+# assert 9 'int main() { int x[3][4]; return sizeof(**x) + 1; }'
+# assert 9 'int main() { int x[3][4]; return sizeof **x + 1; }'
+# assert 8 'int main() { int x[3][4]; return sizeof(**x + 1); }'
+assert 8 'int main() { int x; x=1; return sizeof(x=2); }'
+assert 1 'int main() { int x; x=1; sizeof(x=2); return x; }'
+
 echo -e "\e[33mAll Test Passed.\e[0m"
 
 make clean
