@@ -144,8 +144,8 @@ static Vector *block_item_list(TokenList *tokens)
     {
         if (eatable(tokens, TK_INT))
         {
-            Token *id = declaration(tokens);
-            insert_localvar_to_fn_env(id);
+            Decl *decl = declaration(tokens);
+            insert_localvar_to_fn_env(decl->id, decl->cty);
             continue;
         }
 

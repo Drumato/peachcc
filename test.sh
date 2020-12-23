@@ -95,10 +95,10 @@ assert 55 'int main() { return rec(0); }  int rec(int n) { if(n == 10){return n;
 assert 144 'int main () { return fibonacci(12); } int fibonacci(int n) { if(n == 0) { return 0; } else if(n == 1) { return 1; } else { return fibonacci(n-1) + fibonacci(n-2); } }'
 
 assert 3 'int main() { int x; x=3; return *&x; }'
-assert 3 'int main() { int x; int y; int z; x=3; y=&x; z=&y; return **z; }'
+assert 3 'int main() { int x; int *y; int **z; x=3; y=&x; z=&y; return **z; }'
 assert 5 'int main() { int x; int y; x=3; y=5; return *(&x+8); }'
 assert 3 'int main() { int x; int y; x=3; y=5; return *(&y-8); }'
-assert 5 'int main() { int x; int y; x=3; y=&x; *y=5; return x; }'
+assert 5 'int main() { int x; int *y; x=3; y=&x; *y=5; return x; }'
 assert 7 'int main() { int x; int y; x=3; y=5; *(&x+8)=7; return y; }'
 
 assert 7 'int main() { int x; int y; x=3; y=5; *(&y-8)=7; return x; }'

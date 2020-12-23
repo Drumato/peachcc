@@ -1,21 +1,26 @@
 #include "peachcc.h"
 
-static void type_specifier(TokenList *tokens);
-static Token *parameter_declaration(TokenList *tokens);
-static Token *init_declarator_list(TokenList *tokens);
-static Token *init_declarator(TokenList *tokens);
+static CType *type_specifier(TokenList *tokens);
+static void pointer(CType **cty, TokenList *tokens);
+static Decl *parameter_declaration(TokenList *tokens);
+static Token *init_declarator_list(CType **cty, TokenList *tokens);
+static Token *init_declarator(CType **cty, TokenList *tokens);
 static Token *direct_declarator(TokenList *tokens);
 
 // declaration-specifiers init-declarator-list? ';'
 // 現状はこんな感じで良い
-Token *declaration(TokenList *tokens)
+Decl *declaration(TokenList *tokens)
 {
-    type_specifier(tokens);
+    CType *cty = type_specifier(tokens);
 
-    Token *id = init_declarator_list(tokens);
+    Token *id = init_declarator_list(&cty, tokens);
     expect(tokens, TK_SEMICOLON);
 
-    return id;
+    Decl *decl = (Decl *)calloc(1, sizeof(Decl));
+    decl->cty = cty;
+    decl->id = id;
+
+    return decl;
 }
 
 // '(' parameter-declaration (',' parameter-declaration)? ')'
@@ -27,11 +32,11 @@ Vector *parameter_list(TokenList *tokens)
 
     while (!try_eat(tokens, TK_RPAREN))
     {
-        Token *id = parameter_declaration(tokens);
-        insert_localvar_to_fn_env(id);
-        char *copied_name = (char *)calloc(id->length, sizeof(char));
-        strncpy(copied_name, id->str, id->length);
-        copied_name[id->length] = 0;
+        Decl *param = parameter_declaration(tokens);
+        insert_localvar_to_fn_env(param->id, param->cty);
+        char *copied_name = (char *)calloc(param->id->length, sizeof(char));
+        strncpy(copied_name, param->id->str, param->id->length);
+        copied_name[param->id->length] = 0;
         vec_push(params, copied_name);
 
         if (try_eat(tokens, TK_RPAREN))
@@ -45,40 +50,58 @@ Vector *parameter_list(TokenList *tokens)
 }
 
 // declaration-specifiers declarator
-static Token *parameter_declaration(TokenList *tokens)
+static Decl *parameter_declaration(TokenList *tokens)
 {
-    declaration_specifiers(tokens);
-    return declarator(tokens);
+    Decl *param = (Decl *)calloc(1, sizeof(Decl));
+    CType *cty = declaration_specifiers(tokens);
+    Token *id = declarator(&cty, tokens);
+    param->cty = cty;
+    param->id = id;
+    return param;
 }
 
 // type-specifier
 // 後々 type-specifier declaration-specifiers? に変更
 // TypeSpecifier{Type *ty; bool is_static; } みたいなのを返すような変更も必要かも
-void declaration_specifiers(TokenList *tokens)
+CType *declaration_specifiers(TokenList *tokens)
 {
-    type_specifier(tokens);
+    return type_specifier(tokens);
 }
 
 // init-declarator
 // 後々 init-declarator (',' init-declarator)? に変える
-static Token *init_declarator_list(TokenList *tokens)
+static Token *init_declarator_list(CType **cty, TokenList *tokens)
 {
-    return init_declarator(tokens);
+    return init_declarator(cty, tokens);
 }
 
 // declarator
 // 後々 declarator '=' initializer に変える
-static Token *init_declarator(TokenList *tokens)
+static Token *init_declarator(CType **cty, TokenList *tokens)
 {
-    return declarator(tokens);
+    return declarator(cty, tokens);
 }
 
-// direct-declarator
-// 後々 pointer? direct-declarator に変える
-// 返り値の型も変わる
-Token *declarator(TokenList *tokens)
+// pointer? direct-declarator
+Token *declarator(CType **cty, TokenList *tokens)
 {
+    if (eatable(tokens, TK_STAR))
+    {
+        pointer(cty, tokens);
+    }
+
     return direct_declarator(tokens);
+}
+
+// '*'*
+static void pointer(CType **cty, TokenList *tokens)
+{
+    while (try_eat(tokens, TK_STAR))
+    {
+        CType *ptr_to = *cty;
+        *cty = new_ctype(TY_PTR, 8);
+        (*cty)->ptr_to = ptr_to;
+    }
 }
 
 // identifier
@@ -91,7 +114,18 @@ static Token *direct_declarator(TokenList *tokens)
 }
 
 // "int"
-static void type_specifier(TokenList *tokens)
+static CType *type_specifier(TokenList *tokens)
 {
-    expect(tokens, TK_INT);
+    Token *cur = current_token(tokens);
+    switch (cur->kind)
+    {
+    case TK_INT:
+    {
+        expect(tokens, TK_INT);
+        return new_ctype(TY_INT, 8);
+    }
+    default:
+        error_at(cur->str, "not allowed it in type-specifier");
+    }
+    return NULL;
 }

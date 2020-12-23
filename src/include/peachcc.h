@@ -119,6 +119,26 @@ TokenKind current_tk(TokenList *tokens);
 // トークンを読みすすめる
 void progress(TokenList *tokens);
 
+/// ctype.c
+enum CTypeKind
+{
+    TY_INT,
+    TY_PTR,
+};
+typedef enum CTypeKind CTypeKind;
+typedef struct CType CType;
+struct CType
+{
+    CTypeKind kind;
+    // 型が持つサイズ
+    // C言語ではすべての型のサイズがコンパイル時に決定できる
+    size_t size;
+    // ポインタ型の場合に用いる
+    CType *ptr_to;
+};
+
+CType *new_ctype(CTypeKind k, size_t size);
+
 /// ast/expr.c
 typedef enum
 {
@@ -215,6 +235,8 @@ struct Function
     // 現在はただ引数名を持っているに過ぎない
     // 後々型名とかを持つようになるはず
     Vector *params;
+    // 返り値の型
+    CType *return_type;
 };
 typedef struct Function Function;
 
@@ -235,11 +257,12 @@ struct LocalVariable
 {
     char *str;
     size_t length;
+    CType *cty;
     size_t stack_offset;
 };
 typedef struct LocalVariable LocalVariable;
 
-LocalVariable *new_local_var(char *str, size_t length, size_t stack_offset);
+LocalVariable *new_local_var(char *str, size_t length, CType *cty, size_t stack_offset);
 
 /// lexer.c
 void tokenize(TokenList *tokens, char *p);
@@ -266,7 +289,7 @@ bool at_eof(TokenList *tokens);
 
 Token *try_eat_identifier(TokenList *tokens);
 
-void insert_localvar_to_fn_env(Token *id);
+void insert_localvar_to_fn_env(Token *id, CType *cty);
 Token *expect_identifier(TokenList *tokens);
 
 /// parser/toplevel.c
@@ -279,9 +302,16 @@ Stmt *statement(TokenList *tokens);
 
 /// parser/declaration.c
 
-Token *declaration(TokenList *tokens);
-void declaration_specifiers(TokenList *tokens);
-Token *declarator(TokenList *tokens);
+struct Decl
+{
+    CType *cty;
+    Token *id;
+};
+typedef struct Decl Decl;
+
+Decl *declaration(TokenList *tokens);
+CType *declaration_specifiers(TokenList *tokens);
+Token *declarator(CType **cty, TokenList *tokens);
 Vector *parameter_list(TokenList *tokens);
 
 /// parser/expression.c
@@ -297,8 +327,9 @@ void codegen(FILE *output_file, Program *program);
 void error_at(char *loc, char *fmt, ...);
 
 // ASTを標準エラー出力にダンプする
-// ASTの各ノードに適切なトークンが付与されているかどうかもチェックする．
 void dump_ast(Program *program);
+// CTypeを標準エラー出力にダンプする
+void dump_ctype(CType *cty);
 
 // 入力されたCプログラムの中身
 char *c_program_g;

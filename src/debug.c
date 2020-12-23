@@ -18,6 +18,20 @@ void error_at(char *loc, char *fmt, ...)
     fprintf(stderr, "\n");
     exit(1);
 }
+void dump_ctype(CType *cty)
+{
+    switch (cty->kind)
+    {
+    case TY_INT:
+        fprintf(stderr, "int");
+        break;
+    case TY_PTR:
+        dump_ctype(cty->ptr_to);
+        fprintf(stderr, "*");
+        break;
+    }
+}
+
 void dump_ast(Program *program)
 {
     assert(program);
