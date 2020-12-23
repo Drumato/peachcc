@@ -29,7 +29,7 @@ void expect(TokenList *tokens, TokenKind k)
 // それ以外の場合にはエラーを報告する．
 int expect_integer_literal(TokenList *tokens)
 {
-    if (cur_g->kind != TK_INTEGER)
+    if (cur_g->kind != TK_INTEGER_LITERAL)
     {
         error_at(cur_g->str, "expected integer literal");
     }
@@ -49,6 +49,7 @@ bool at_eof(TokenList *tokens)
 {
     return current_tk(tokens) == TK_EOF;
 }
+
 Token *try_eat_identifier(TokenList *tokens)
 {
     Token *ident_loc = current_token(tokens);
@@ -58,4 +59,23 @@ Token *try_eat_identifier(TokenList *tokens)
     }
 
     return ident_loc;
+}
+
+Token *expect_identifier(TokenList *tokens)
+{
+    Token *id = current_token(tokens);
+    expect(tokens, TK_IDENTIFIER);
+    return id;
+}
+
+// 識別子をローカル変数のマップに登録する
+void insert_localvar_to_fn_env(Token *id)
+{
+    LocalVariable *lv;
+    if ((lv = (LocalVariable *)map_get(local_variables_in_cur_fn_g, id->str, id->length)) == NULL)
+    {
+        total_stack_size_in_fn_g += 8;
+        lv = new_local_var(id->str, id->length, 0);
+        map_put(local_variables_in_cur_fn_g, id->str, lv);
+    }
 }

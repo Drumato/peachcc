@@ -60,32 +60,33 @@ void *map_get(Map *map, char *key, size_t length);
 // Tokenの種類
 enum TokenKind
 {
-    TK_PLUS,       // `+`
-    TK_MINUS,      // `-`
-    TK_STAR,       // `*`
-    TK_SLASH,      // `/`
-    TK_AMPERSAND,  // `&`
-    TK_LPAREN,     // `(`
-    TK_RPAREN,     // `)`
-    TK_LBRACKET,   // `{`
-    TK_RBRACKET,   // `}`
-    TK_LE,         // `<`
-    TK_GE,         // `>`
-    TK_LEEQ,       // `<=`
-    TK_GEEQ,       // `>=`
-    TK_EQ,         // `==`
-    TK_NTEQ,       // `!=`
-    TK_ASSIGN,     // `=`
-    TK_COMMA,      // `,`
-    TK_SEMICOLON,  // `;`
-    TK_INTEGER,    // 整数
-    TK_IDENTIFIER, // 識別子
-    TK_RETURN,     // "return"
-    TK_IF,         // "if"
-    TK_ELSE,       // "else"
-    TK_FOR,        // "for"
-    TK_WHILE,      // "while"
-    TK_EOF,        // 入力の終わり
+    TK_PLUS,            // `+`
+    TK_MINUS,           // `-`
+    TK_STAR,            // `*`
+    TK_SLASH,           // `/`
+    TK_AMPERSAND,       // `&`
+    TK_LPAREN,          // `(`
+    TK_RPAREN,          // `)`
+    TK_LBRACKET,        // `{`
+    TK_RBRACKET,        // `}`
+    TK_LE,              // `<`
+    TK_GE,              // `>`
+    TK_LEEQ,            // `<=`
+    TK_GEEQ,            // `>=`
+    TK_EQ,              // `==`
+    TK_NTEQ,            // `!=`
+    TK_ASSIGN,          // `=`
+    TK_COMMA,           // `,`
+    TK_SEMICOLON,       // `;`
+    TK_INTEGER_LITERAL, // 整数
+    TK_IDENTIFIER,      // 識別子
+    TK_INT,             // "int"
+    TK_RETURN,          // "return"
+    TK_IF,              // "if"
+    TK_ELSE,            // "else"
+    TK_FOR,             // "for"
+    TK_WHILE,           // "while"
+    TK_EOF,             // 入力の終わり
 };
 typedef enum TokenKind TokenKind;
 
@@ -265,6 +266,9 @@ bool at_eof(TokenList *tokens);
 
 Token *try_eat_identifier(TokenList *tokens);
 
+void insert_localvar_to_fn_env(Token *id);
+Token *expect_identifier(TokenList *tokens);
+
 /// parser/toplevel.c
 Program *parse(TokenList *tokens);
 
@@ -272,6 +276,13 @@ Program *parse(TokenList *tokens);
 
 Vector *compound_stmt(TokenList *tokens);
 Stmt *statement(TokenList *tokens);
+
+/// parser/declaration.c
+
+Token *declaration(TokenList *tokens);
+void declaration_specifiers(TokenList *tokens);
+Token *declarator(TokenList *tokens);
+Vector *parameter_list(TokenList *tokens);
 
 /// parser/expression.c
 

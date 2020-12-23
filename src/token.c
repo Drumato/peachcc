@@ -23,7 +23,7 @@ Token *new_identifier_token(char *str, size_t length)
 // 整数トークンの作成
 Token *new_integer_token(char *str, int value, size_t length)
 {
-    Token *tok = new_token(TK_INTEGER, str, length);
+    Token *tok = new_token(TK_INTEGER_LITERAL, str, length);
     tok->value = value;
     return tok;
 }

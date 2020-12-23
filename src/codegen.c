@@ -234,6 +234,10 @@ static void gen_lvalue(Expr *expr)
 
         // 変数のスタックオフセットを計算
         LocalVariable *lv = map_get(cur_fn_g->local_variables, expr->copied_name, expr->length);
+        if (lv == NULL)
+        {
+            error_at(expr->str, "undefined variable");
+        }
         out_newline("  sub rax, %d", lv->stack_offset);
         push_reg("rax");
         break;

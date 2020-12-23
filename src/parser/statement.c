@@ -5,6 +5,7 @@ static Stmt *return_stmt(TokenList *tokens);
 static Stmt *if_stmt(TokenList *tokens);
 static Stmt *for_stmt(TokenList *tokens);
 static Stmt *while_stmt(TokenList *tokens);
+static Vector *block_item_list(TokenList *tokens);
 
 Stmt *statement(TokenList *tokens)
 {
@@ -111,15 +112,15 @@ static Stmt *for_stmt(TokenList *tokens)
     return s;
 }
 
-// '{' statement* '}'
+// '{' block_item_list '}'
 Vector *compound_stmt(TokenList *tokens)
 {
     expect(tokens, TK_LBRACKET);
-    Vector *body = new_vec();
-    while (!try_eat(tokens, TK_RBRACKET))
-    {
-        vec_push(body, statement(tokens));
-    }
+
+    Vector *body = block_item_list(tokens);
+
+    expect(tokens, TK_RBRACKET);
+
     return body;
 }
 
@@ -132,4 +133,23 @@ static Stmt *expr_stmt(TokenList *tokens)
     Stmt *s = new_stmt(ST_EXPR, loc);
     s->expr = e;
     return s;
+}
+
+// (declaration | statement)*
+static Vector *block_item_list(TokenList *tokens)
+{
+    Vector *body = new_vec();
+
+    while (!eatable(tokens, TK_RBRACKET))
+    {
+        if (eatable(tokens, TK_INT))
+        {
+            Token *id = declaration(tokens);
+            insert_localvar_to_fn_env(id);
+            continue;
+        }
+
+        vec_push(body, statement(tokens));
+    }
+    return body;
 }
