@@ -262,13 +262,15 @@ Function *new_function(char *name, size_t length);
 
 /// ast/root.c
 
-struct Program
+struct TranslationUnit
 {
     // 関数定義群
     Vector *functions;
+    // グローバル変数の定義
+    Map *global_variables;
 };
-typedef struct Program Program;
-Program *new_program(void);
+typedef struct TranslationUnit TranslationUnit;
+TranslationUnit *new_translation_unit(void);
 
 /// variable.c
 struct LocalVariable
@@ -311,7 +313,7 @@ void insert_localvar_to_fn_env(Token *id, CType *cty);
 Token *expect_identifier(TokenList *tokens);
 
 /// parser/toplevel.c
-Program *parse(TokenList *tokens);
+TranslationUnit *parse(TokenList *tokens);
 
 /// parser/statement.c
 
@@ -331,6 +333,7 @@ Decl *declaration(TokenList *tokens);
 CType *declaration_specifiers(TokenList *tokens);
 Token *declarator(CType **cty, TokenList *tokens);
 Vector *parameter_list(TokenList *tokens);
+void decl_spec(TokenList *tokens, Token **id, CType **cty);
 
 /// parser/expression.c
 
@@ -338,10 +341,10 @@ Expr *expression(TokenList *tokens);
 
 /// analyze.c
 
-void analyze(Program *program);
+void analyze(TranslationUnit *translation_unit);
 
 /// codegen.c
-void codegen(FILE *output_file, Program *program);
+void codegen(FILE *output_file, TranslationUnit *translation_unit);
 
 /// debug.c
 
@@ -349,7 +352,7 @@ void codegen(FILE *output_file, Program *program);
 void error_at(char *loc, char *fmt, ...);
 
 // ASTを標準エラー出力にダンプする
-void dump_ast(Program *program);
+void dump_ast(TranslationUnit *translation_unit);
 // CTypeを標準エラー出力にダンプする
 void dump_ctype(CType *cty);
 

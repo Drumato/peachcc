@@ -4,6 +4,7 @@ static FILE *output_file_g;
 static int label_num_g;
 static char *param_reg64_g[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 static Function *cur_fn_g;
+static Map *global_variables_g;
 
 static void gen_fn(Function *fn);
 static void gen_stmt(Stmt *stmt);
@@ -20,15 +21,27 @@ static void gen_load(CType *cty);
 static void push_reg(char *reg);
 static void pop_reg(char *reg);
 
-void codegen(FILE *output_file, Program *program)
+void codegen(FILE *output_file, TranslationUnit *translation_unit)
 {
     label_num_g = 0;
     output_file_g = output_file;
+    global_variables_g = translation_unit->global_variables;
 
-    for (size_t i = 0; i < program->functions->len; i++)
+    for (size_t i = 0; i < translation_unit->functions->len; i++)
     {
-        Function *f = (Function *)program->functions->data[i];
+        Function *f = (Function *)translation_unit->functions->data[i];
         gen_fn(f);
+    }
+
+    for (size_t i = 0; i < global_variables_g->keys->len; i++)
+    {
+        char *glob_var_name = global_variables_g->keys->data[i];
+        CType *glob_var_ty = global_variables_g->vals->data[i];
+
+        out_newline("  .data");
+        out_newline("  .globl %s", glob_var_name);
+        out_newline("%s:", glob_var_name);
+        out_newline("  .zero %d", glob_var_ty->size);
     }
 
     gen_function_epilogue();
@@ -230,16 +243,20 @@ static void gen_lvalue(Expr *expr)
     {
     case EX_LOCAL_VAR:
     {
-        out_newline("  mov rax, rbp");
 
         // 変数のスタックオフセットを計算
         LocalVariable *lv = map_get(cur_fn_g->local_variables, expr->copied_name, expr->length);
-        if (lv == NULL)
+        if (lv != NULL)
         {
-            error_at(expr->str, "undefined variable");
+            out_newline("  lea rax, -%d[rbp]", lv->stack_offset);
+            push_reg("rax");
+            break;
         }
-        out_newline("  sub rax, %d", lv->stack_offset);
-        push_reg("rax");
+
+        // グローバル変数とする
+        // analyze.cの解析により，変数が存在しなければ既にエラーが出ているはずなので，
+        // この時点では存在すると決め打ってコード生成して良い
+        out_newline("  push offset %s", expr->copied_name);
         break;
     }
     case EX_UNARY_DEREF:

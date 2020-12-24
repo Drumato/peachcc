@@ -24,7 +24,7 @@ int main(int argc, char **argv)
     TokenList *tokens = new_vec();
     tokenize(tokens, c_program_g);
 
-    Program *program = parse(tokens);
+    TranslationUnit *program = parse(tokens);
 
     if (peachcc_opt_g->debug)
     {

@@ -36,12 +36,26 @@ void dump_ctype(CType *cty)
     }
 }
 
-void dump_ast(Program *program)
+void dump_ast(TranslationUnit *translation_unit)
 {
-    assert(program);
-    for (size_t i = 0; i < program->functions->len; i++)
+    assert(translation_unit);
+    assert(translation_unit->functions);
+    assert(translation_unit->global_variables);
+
+    for (size_t i = 0; i < translation_unit->global_variables->keys->len; i++)
     {
-        Function *f = (Function *)(program->functions->data[i]);
+        char *glob_var_name = translation_unit->global_variables->keys->data[i];
+        CType *glob_var_ty = translation_unit->global_variables->vals->data[i];
+
+        fprintf(stderr, "globals[%zu] = %s: ", i, glob_var_name);
+        dump_ctype(glob_var_ty);
+
+        fprintf(stderr, "\n");
+    }
+
+    for (size_t i = 0; i < translation_unit->functions->len; i++)
+    {
+        Function *f = (Function *)(translation_unit->functions->data[i]);
         dump_fn(f);
     }
 }

@@ -12,9 +12,9 @@ static void type_suffix(CType **cty, TokenList *tokens);
 // 現状はこんな感じで良い
 Decl *declaration(TokenList *tokens)
 {
-    CType *cty = type_specifier(tokens);
-
-    Token *id = init_declarator_list(&cty, tokens);
+    Token *id;
+    CType *cty;
+    decl_spec(tokens, &id, &cty);
     expect(tokens, TK_SEMICOLON);
 
     Decl *decl = (Decl *)calloc(1, sizeof(Decl));
@@ -22,6 +22,13 @@ Decl *declaration(TokenList *tokens)
     decl->id = id;
 
     return decl;
+}
+
+void decl_spec(TokenList *tokens, Token **id, CType **cty)
+{
+    *cty = type_specifier(tokens);
+
+    *id = init_declarator_list(cty, tokens);
 }
 
 // '(' parameter-declaration (',' parameter-declaration)? ')'
@@ -119,7 +126,7 @@ static Token *direct_declarator(CType **cty, TokenList *tokens)
     return id;
 }
 
-// ('[' integer-literal ']')*
+// (('[' integer-literal ']')*)
 // 後々もっと変更する必要あり
 static void type_suffix(CType **cty, TokenList *tokens)
 {

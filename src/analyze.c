@@ -4,17 +4,22 @@
 // 関数の返り値の型を探す
 static Vector *functions_g;
 
+// グローバル変数のマップ
+static Map *global_variables_g;
+
 static void walk_fn(Function *f);
 
 static void walk_stmt(Stmt *s);
 static CType *walk_expr(Expr **e);
 
-void analyze(Program *program)
+void analyze(TranslationUnit *translation_unit)
 {
-    functions_g = program->functions;
-    for (size_t i = 0; i < program->functions->len; i++)
+    global_variables_g = translation_unit->global_variables;
+    functions_g = translation_unit->functions;
+
+    for (size_t i = 0; i < translation_unit->functions->len; i++)
     {
-        Function *f = (Function *)program->functions->data[i];
+        Function *f = (Function *)translation_unit->functions->data[i];
         walk_fn(f);
     }
 }
@@ -120,9 +125,17 @@ static CType *walk_expr(Expr **e)
     case EX_LOCAL_VAR:
     {
         LocalVariable *lv = map_get(local_variables_in_cur_fn_g, (*e)->str, (*e)->length);
-        assert(lv);
-        (*e)->cty = lv->cty;
-        return lv->cty;
+        if (lv != NULL)
+        {
+            (*e)->cty = lv->cty;
+            return lv->cty;
+        }
+
+        // グローバル変数のマップからも探す
+        CType *global_ty = map_get(global_variables_g, (*e)->str, (*e)->length);
+        assert(global_ty);
+        (*e)->cty = global_ty;
+        return global_ty;
     }
     case EX_UNARY_SIZEOF:
     {
