@@ -9,6 +9,7 @@ static Expr *relation(TokenList *tokens);
 static Expr *addition(TokenList *tokens);
 static Expr *multiplication(TokenList *tokens);
 static Expr *prefix_unary(TokenList *tokens);
+static Expr *postfix_unary(TokenList *tokens);
 static Expr *primary(TokenList *tokens);
 static Expr *paren_expr(TokenList *tokens);
 static Expr *ident_expr(TokenList *tokens, Token *ident_loc);
@@ -146,7 +147,7 @@ static Expr *multiplication(TokenList *tokens)
     return e;
 }
 
-// ('+' | '-' | '*' | '&' | "sizeof")? prefix_unary
+// ('+' | '-' | '*' | '&' | "sizeof") prefix_unary) | postfix_unary
 static Expr *prefix_unary(TokenList *tokens)
 {
     Expr *e;
@@ -162,7 +163,24 @@ static Expr *prefix_unary(TokenList *tokens)
     else if (try_eat(tokens, TK_SIZEOF))
         e = new_unop(EX_UNARY_SIZEOF, prefix_unary(tokens), cur_g->str);
     else
-        e = primary(tokens);
+        e = postfix_unary(tokens);
+    return e;
+}
+
+// primary ('[' expr ']')*
+static Expr *postfix_unary(TokenList *tokens)
+{
+    Expr *e = primary(tokens);
+
+    // x[y] は単に *(x + y) として変換してしまう．
+    while (try_eat(tokens, TK_LBRACKET))
+    {
+        Token *loc = current_token(tokens);
+        Expr *idx = expression(tokens);
+        expect(tokens, TK_RBRACKET);
+        e = new_unop(EX_UNARY_DEREF, new_binop(EX_ADD, e, idx, loc->str), loc->str);
+    }
+
     return e;
 }
 

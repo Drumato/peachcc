@@ -15,18 +15,31 @@ void analyze(Program *program)
     for (size_t i = 0; i < program->functions->len; i++)
     {
         Function *f = (Function *)program->functions->data[i];
-        local_variables_in_cur_fn_g = f->local_variables;
         walk_fn(f);
     }
 }
 static void walk_fn(Function *f)
 {
+    assert(f);
+    assert(f->local_variables);
+    assert(f->params);
+    assert(f->copied_name);
+    assert(f->return_type);
+    assert(f->stmts);
+
+    local_variables_in_cur_fn_g = f->local_variables;
+
     // ローカル変数のスタック割当
+    // パース後の状態では，すべての変数のオフセットが0の状態で格納されている
     LocalVariable *lv;
     size_t total_stack_size = f->stack_size;
     for (size_t i = 0; i < local_variables_in_cur_fn_g->keys->len; i++)
     {
         lv = local_variables_in_cur_fn_g->vals->data[i];
+        assert(lv);
+        assert(lv->cty);
+        assert(lv->str);
+
         lv->stack_offset = total_stack_size;
         total_stack_size -= lv->cty->size;
     }
@@ -39,12 +52,16 @@ static void walk_fn(Function *f)
 }
 static void walk_stmt(Stmt *s)
 {
+    assert(s);
     switch (s->kind)
     {
     case ST_EXPR:
+        assert(s->expr);
         walk_expr(&s->expr);
         break;
     case ST_IF:
+        assert(s->cond);
+        assert(s->then);
         walk_expr(&s->cond);
         walk_stmt(s->then);
         if (s->els)
@@ -53,6 +70,7 @@ static void walk_stmt(Stmt *s)
         }
         break;
     case ST_FOR:
+
         if (s->init)
         {
             walk_expr(&s->init);
@@ -65,17 +83,22 @@ static void walk_stmt(Stmt *s)
         {
             walk_expr(&s->inc);
         }
+        assert(s->then);
         walk_stmt(s->then);
         break;
     case ST_WHILE:
+        assert(s->cond);
+        assert(s->then);
         walk_expr(&s->cond);
         walk_stmt(s->then);
         break;
     case ST_RETURN:
+        assert(s->expr);
         walk_expr(&s->expr);
         break;
     case ST_COMPOUND:
     {
+        assert(s->body);
         for (size_t i = 0; i < s->body->len; i++)
         {
             Stmt *child = (Stmt *)s->body->data[i];
@@ -87,6 +110,8 @@ static void walk_stmt(Stmt *s)
 
 static CType *walk_expr(Expr **e)
 {
+    assert(*e);
+
     switch ((*e)->kind)
     {
     case EX_INTEGER:
@@ -108,6 +133,8 @@ static CType *walk_expr(Expr **e)
     }
     case EX_CALL:
     {
+        assert((*e)->params);
+        assert((*e)->copied_name);
         for (size_t i = 0; i < (*e)->params->len; i++)
         {
             Expr *param = (*e)->params->data[i];
@@ -130,30 +157,31 @@ static CType *walk_expr(Expr **e)
     }
     case EX_UNARY_ADDR:
     {
+        assert((*e)->unary_op);
         CType *base = walk_expr(&(*e)->unary_op);
         CType *ptr = new_ptr(base);
         (*e)->cty = ptr;
         return ptr;
     }
     case EX_UNARY_PLUS:
+        assert((*e)->unary_op);
         (*e)->cty = new_int();
         return (*e)->cty;
     case EX_UNARY_MINUS:
+        assert((*e)->unary_op);
         (*e)->cty = new_int();
         return (*e)->cty;
     case EX_UNARY_DEREF:
     {
+        assert((*e)->unary_op);
         CType *ptr = walk_expr(&(*e)->unary_op);
-        if (ptr->kind != TY_PTR && ptr->kind != TY_ARRAY)
-        {
-            error_at((*e)->str, "cannot dereference without pointer");
-        }
-
         (*e)->cty = ptr->base;
         return ptr->base;
     }
     case EX_ADD:
     {
+        assert((*e)->lhs);
+        assert((*e)->rhs);
         CType *lhs_type = walk_expr(&(*e)->lhs);
         CType *rhs_type = walk_expr(&(*e)->rhs);
         (*e)->cty = lhs_type;
@@ -179,12 +207,14 @@ static CType *walk_expr(Expr **e)
 
         // ポインタ演算
         // ptr + integerの形になっているので，右辺をtype_size倍する
-        (*e)->rhs = new_binop(EX_MUL, (*e)->rhs, new_integer_literal(lhs_type->base->size, (*e)->rhs->str), (*e)->str);
+        (*e)->rhs = new_binop(EX_MUL, (*e)->rhs, new_integer_literal((*e)->lhs->cty->base->size, (*e)->rhs->str), (*e)->str);
 
-        return lhs_type;
+        return (*e)->lhs->cty;
     }
     case EX_SUB:
     {
+        assert((*e)->lhs);
+        assert((*e)->rhs);
         CType *lhs_type = walk_expr(&(*e)->lhs);
         CType *rhs_type = walk_expr(&(*e)->rhs);
         (*e)->cty = lhs_type;
@@ -220,6 +250,9 @@ static CType *walk_expr(Expr **e)
     case EX_GE:
     case EX_GEEQ:
     {
+        assert((*e)->lhs);
+        assert((*e)->rhs);
+
         CType *lhs_type = walk_expr(&(*e)->lhs);
         walk_expr(&(*e)->rhs);
         (*e)->cty = lhs_type;
@@ -227,6 +260,9 @@ static CType *walk_expr(Expr **e)
     }
     case EX_ASSIGN:
     {
+        assert((*e)->lhs);
+        assert((*e)->rhs);
+
         CType *lhs_type = walk_expr(&(*e)->lhs);
         if (lhs_type->kind == TY_ARRAY)
         {
