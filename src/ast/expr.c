@@ -17,7 +17,7 @@ Expr *new_unop(ExprKind op, Expr *child_expr, char *str)
     return e;
 }
 
-Expr *new_integer(int value, char *str)
+Expr *new_integer_literal(int value, char *str)
 {
     Expr *e = new_expr(EX_INTEGER, str);
     e->value = value;

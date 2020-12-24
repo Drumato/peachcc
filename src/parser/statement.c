@@ -13,7 +13,7 @@ Stmt *statement(TokenList *tokens)
     {
     case TK_RETURN:
         return return_stmt(tokens);
-    case TK_LBRACKET:
+    case TK_LBRACE:
     {
         Token *loc = current_token(tokens);
 
@@ -115,11 +115,11 @@ static Stmt *for_stmt(TokenList *tokens)
 // '{' block_item_list '}'
 Vector *compound_stmt(TokenList *tokens)
 {
-    expect(tokens, TK_LBRACKET);
+    expect(tokens, TK_LBRACE);
 
     Vector *body = block_item_list(tokens);
 
-    expect(tokens, TK_RBRACKET);
+    expect(tokens, TK_RBRACE);
 
     return body;
 }
@@ -140,7 +140,7 @@ static Vector *block_item_list(TokenList *tokens)
 {
     Vector *body = new_vec();
 
-    while (!eatable(tokens, TK_RBRACKET))
+    while (!eatable(tokens, TK_RBRACE))
     {
         if (eatable(tokens, TK_INT))
         {

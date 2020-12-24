@@ -67,8 +67,10 @@ enum TokenKind
     TK_AMPERSAND,       // `&`
     TK_LPAREN,          // `(`
     TK_RPAREN,          // `)`
-    TK_LBRACKET,        // `{`
-    TK_RBRACKET,        // `}`
+    TK_LBRACKET,        // `[`
+    TK_RBRACKET,        // `]`
+    TK_LBRACE,          // `{`
+    TK_RBRACE,          // `}`
     TK_LE,              // `<`
     TK_GE,              // `>`
     TK_LEEQ,            // `<=`
@@ -125,6 +127,7 @@ enum CTypeKind
 {
     TY_INT,
     TY_PTR,
+    TY_ARRAY,
 };
 typedef enum CTypeKind CTypeKind;
 typedef struct CType CType;
@@ -134,11 +137,17 @@ struct CType
     // 型が持つサイズ
     // C言語ではすべての型のサイズがコンパイル時に決定できる
     size_t size;
-    // ポインタ型の場合に用いる
-    CType *ptr_to;
+    // ポインタ型 or 配列型の場合に用いる
+    // 配列型も暗黙的にポインタに変換されるため，同じメンバを使うことにする
+    CType *base;
+    // 配列の長さ
+    // コンパイル時に決定できるはず
+    int array_len;
 };
 
-CType *new_ctype(CTypeKind k, size_t size);
+CType *new_int(void);
+CType *new_ptr(CType *base);
+CType *new_array(CType *base, int array_len);
 
 /// ast/expr.c
 typedef enum
@@ -186,11 +195,14 @@ struct Expr
 
     Expr *unary_op; // 単項演算で使用
     int value;      // kindがND_INTEGERの場合のみ使う
+    // 式の型
+    // analyze.cで型付けされる
+    CType *cty;
 };
 
 Expr *new_unop(ExprKind op, Expr *child_expr, char *str);
 Expr *new_binop(ExprKind op, Expr *lhs, Expr *rhs, char *str);
-Expr *new_integer(int value, char *str);
+Expr *new_integer_literal(int value, char *str);
 Expr *new_identifier(char *str, size_t length);
 
 /// ast/stmt.c

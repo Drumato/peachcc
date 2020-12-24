@@ -26,8 +26,12 @@ void dump_ctype(CType *cty)
         fprintf(stderr, "int");
         break;
     case TY_PTR:
-        dump_ctype(cty->ptr_to);
+        dump_ctype(cty->base);
         fprintf(stderr, "*");
+        break;
+    case TY_ARRAY:
+        dump_ctype(cty->base);
+        fprintf(stderr, "[%d]", cty->array_len);
         break;
     }
 }

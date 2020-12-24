@@ -5,7 +5,8 @@ static void pointer(CType **cty, TokenList *tokens);
 static Decl *parameter_declaration(TokenList *tokens);
 static Token *init_declarator_list(CType **cty, TokenList *tokens);
 static Token *init_declarator(CType **cty, TokenList *tokens);
-static Token *direct_declarator(TokenList *tokens);
+static Token *direct_declarator(CType **cty, TokenList *tokens);
+static void type_suffix(CType **cty, TokenList *tokens);
 
 // declaration-specifiers init-declarator-list? ';'
 // 現状はこんな感じで良い
@@ -90,7 +91,7 @@ Token *declarator(CType **cty, TokenList *tokens)
         pointer(cty, tokens);
     }
 
-    return direct_declarator(tokens);
+    return direct_declarator(cty, tokens);
 }
 
 // '*'*
@@ -98,19 +99,38 @@ static void pointer(CType **cty, TokenList *tokens)
 {
     while (try_eat(tokens, TK_STAR))
     {
-        CType *ptr_to = *cty;
-        *cty = new_ctype(TY_PTR, 8);
-        (*cty)->ptr_to = ptr_to;
+        CType *base = *cty;
+        *cty = new_ptr(base);
     }
 }
 
-// identifier
+// identifier type-suffix?
 // 実際の仕様からかなり削っているので注意
-// 返り値の型も変更する必要あり
-static Token *direct_declarator(TokenList *tokens)
+static Token *direct_declarator(CType **cty, TokenList *tokens)
 {
     Token *id = expect_identifier(tokens);
+
+    if (!eatable(tokens, TK_LBRACKET))
+    {
+        return id;
+    }
+
+    type_suffix(cty, tokens);
     return id;
+}
+
+// ('[' integer-literal ']')*
+// 後々もっと変更する必要あり
+static void type_suffix(CType **cty, TokenList *tokens)
+{
+    if (!try_eat(tokens, TK_LBRACKET))
+    {
+        return;
+    }
+    int array_len = expect_integer_literal(tokens);
+    expect(tokens, TK_RBRACKET);
+    type_suffix(cty, tokens);
+    *cty = new_array(*cty, array_len);
 }
 
 // "int"
@@ -122,7 +142,7 @@ static CType *type_specifier(TokenList *tokens)
     case TK_INT:
     {
         expect(tokens, TK_INT);
-        return new_ctype(TY_INT, 8);
+        return new_int();
     }
     default:
         error_at(cur->str, "not allowed it in type-specifier");

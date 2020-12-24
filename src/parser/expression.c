@@ -182,7 +182,7 @@ static Expr *primary(TokenList *tokens)
 
     char *loc = cur_g->str;
     int value = expect_integer_literal(tokens);
-    return new_integer(value, loc);
+    return new_integer_literal(value, loc);
 }
 
 // '(' expr ')'

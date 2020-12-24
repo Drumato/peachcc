@@ -16,7 +16,7 @@ static void gen_binop_expr(Expr *expr);
 static void gen_unary_op_expr(Expr *expr);
 static void gen_compare_rax_and_rdi_by(char *mode);
 static void out_newline(char *fmt, ...);
-static void gen_dereference_by_popping_stack(void);
+static void gen_load(CType *cty);
 static void push_reg(char *reg);
 static void pop_reg(char *reg);
 
@@ -163,7 +163,7 @@ static void gen_expr(Expr *expr)
     case EX_LOCAL_VAR:
         // gen_lvalue でアドレスをプッシュするだけでは変数式にならない
         gen_lvalue(expr);
-        gen_dereference_by_popping_stack();
+        gen_load(expr->cty);
         break;
     case EX_CALL:
     {
@@ -244,6 +244,8 @@ static void gen_lvalue(Expr *expr)
     }
     case EX_UNARY_DEREF:
     {
+        // 変数のアドレスをスタックに積むだけでなく
+        // そのアドレスに格納されたアドレスを得る操作をして良い
         gen_expr(expr->unary_op);
         break;
     }
@@ -308,18 +310,20 @@ static void gen_unary_op_expr(Expr *expr)
     assert(expr->unary_op);
 
     gen_expr(expr->unary_op);
-    pop_reg("rax");
     switch (expr->kind)
     {
 
     case EX_UNARY_PLUS: // 単項+は何もしなくてよい
+        pop_reg("rax");
         break;
 
     case EX_UNARY_MINUS:
+        pop_reg("rax");
         out_newline("  neg rax");
         break;
     case EX_UNARY_DEREF:
-        out_newline("  mov rax, [rax]");
+        // 配列オブジェクトかもしれないので，単にデリファレンスせずgen_loadでチェックを挟む
+        gen_load(expr->cty);
         break;
     default:
         error_at(expr->str, "It's not a unary operation");
@@ -353,10 +357,16 @@ static void gen_compare_rax_and_rdi_by(char *mode)
     out_newline("  movzb rax, al");
 }
 
-// スタックのトップに積んであるアドレスを，
-// そのアドレスが指す値に置き換える
-static void gen_dereference_by_popping_stack(void)
+// raxに格納されたアドレスの中身を取り出す
+// 配列の場合，レジスタに配列全体をロードできないので何もしない
+// これにより，レジスタには単に配列オブジェクトの先頭アドレスが格納される．
+// C言語のセマンティクスに合致したコード生成が可能．
+static void gen_load(CType *cty)
 {
+    if (cty->kind == TY_ARRAY)
+    {
+        return;
+    }
     pop_reg("rax");
     out_newline("  mov rax, [rax]");
     push_reg("rax");

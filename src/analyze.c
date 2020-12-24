@@ -49,7 +49,7 @@ static void walk_stmt(Stmt *s)
         walk_stmt(s->then);
         if (s->els)
         {
-            walk_stmt(s->then);
+            walk_stmt(s->els);
         }
         break;
     case ST_FOR:
@@ -90,25 +90,29 @@ static CType *walk_expr(Expr **e)
     switch ((*e)->kind)
     {
     case EX_INTEGER:
-        return new_ctype(TY_INT, 8);
+        (*e)->cty = new_int();
+        return (*e)->cty;
     case EX_LOCAL_VAR:
     {
         LocalVariable *lv = map_get(local_variables_in_cur_fn_g, (*e)->str, (*e)->length);
         assert(lv);
+        (*e)->cty = lv->cty;
         return lv->cty;
     }
     case EX_UNARY_SIZEOF:
     {
         CType *cty = walk_expr(&(*e)->unary_op);
-        *e = new_integer(cty->size, (*e)->str);
-        return new_ctype(TY_INT, 8);
+        *e = new_integer_literal(cty->size, (*e)->str);
+        (*e)->cty = new_int();
+        return (*e)->cty;
     }
     case EX_CALL:
     {
         for (size_t i = 0; i < (*e)->params->len; i++)
         {
             Expr *param = (*e)->params->data[i];
-            walk_expr(&param);
+            CType *param_ty = walk_expr(&param);
+            param->cty = param_ty;
         }
 
         // 関数の返り値型を得るため，関数列を走査
@@ -117,6 +121,7 @@ static CType *walk_expr(Expr **e)
             Function *f = functions_g->data[i];
             if (!strncmp(f->copied_name, (*e)->copied_name, (*e)->length))
             {
+                (*e)->cty = f->return_type;
                 return f->return_type;
             }
         }
@@ -126,41 +131,46 @@ static CType *walk_expr(Expr **e)
     case EX_UNARY_ADDR:
     {
         CType *base = walk_expr(&(*e)->unary_op);
-        CType *ptr = new_ctype(TY_PTR, 8);
-        ptr->ptr_to = base;
+        CType *ptr = new_ptr(base);
+        (*e)->cty = ptr;
         return ptr;
     }
     case EX_UNARY_PLUS:
-        return new_ctype(TY_INT, 8);
+        (*e)->cty = new_int();
+        return (*e)->cty;
     case EX_UNARY_MINUS:
-        return new_ctype(TY_INT, 8);
+        (*e)->cty = new_int();
+        return (*e)->cty;
     case EX_UNARY_DEREF:
     {
         CType *ptr = walk_expr(&(*e)->unary_op);
-        if (ptr->kind != TY_PTR)
+        if (ptr->kind != TY_PTR && ptr->kind != TY_ARRAY)
         {
             error_at((*e)->str, "cannot dereference without pointer");
         }
-        return ptr->ptr_to;
+
+        (*e)->cty = ptr->base;
+        return ptr->base;
     }
     case EX_ADD:
     {
         CType *lhs_type = walk_expr(&(*e)->lhs);
         CType *rhs_type = walk_expr(&(*e)->rhs);
+        (*e)->cty = lhs_type;
         if (lhs_type->kind == TY_INT && rhs_type->kind == TY_INT)
         {
             return lhs_type;
         }
 
         // pointer同士の足し算はinvalid
-        if (lhs_type->ptr_to && rhs_type->ptr_to)
+        if (lhs_type->base && rhs_type->base)
         {
             error_at((*e)->str, "invalid addition between pointer(s)");
         }
 
         // C言語において `+` はポインタについてオーバーロードされているので，その挙動を実現
         // ptr + integer の形に単純化する
-        if (!lhs_type->ptr_to && rhs_type->ptr_to)
+        if (!lhs_type->base && rhs_type->base)
         {
             Expr *tmp = (*e)->lhs;
             (*e)->lhs = (*e)->rhs;
@@ -169,13 +179,15 @@ static CType *walk_expr(Expr **e)
 
         // ポインタ演算
         // ptr + integerの形になっているので，右辺をtype_size倍する
-        (*e)->rhs = new_binop(EX_MUL, (*e)->rhs, new_integer(lhs_type->ptr_to->size, (*e)->rhs->str), (*e)->str);
+        (*e)->rhs = new_binop(EX_MUL, (*e)->rhs, new_integer_literal(lhs_type->base->size, (*e)->rhs->str), (*e)->str);
+
         return lhs_type;
     }
     case EX_SUB:
     {
         CType *lhs_type = walk_expr(&(*e)->lhs);
         CType *rhs_type = walk_expr(&(*e)->rhs);
+        (*e)->cty = lhs_type;
         if (lhs_type->kind == TY_INT && rhs_type->kind == TY_INT)
         {
             return lhs_type;
@@ -183,17 +195,17 @@ static CType *walk_expr(Expr **e)
 
         // C言語において `-` はポインタについてオーバーロードされているので，その挙動を実現
         // ptr - integer の場合，+と同様に
-        if (lhs_type->ptr_to && rhs_type->kind == TY_INT)
+        if (lhs_type->base && rhs_type->kind == TY_INT)
         {
-            (*e)->rhs = new_binop(EX_MUL, (*e)->rhs, new_integer(lhs_type->ptr_to->size, (*e)->rhs->str), (*e)->str);
+            (*e)->rhs = new_binop(EX_MUL, (*e)->rhs, new_integer_literal(lhs_type->base->size, (*e)->rhs->str), (*e)->str);
             return lhs_type;
         }
 
         // ptr - ptr の場合，2つのポインタの間にどれだけtype_size * byteがあるか，という意味論に
-        if (lhs_type->ptr_to && rhs_type->ptr_to)
+        if (lhs_type->base && rhs_type->base)
         {
-            *e = new_binop(EX_DIV, *e, new_integer(lhs_type->ptr_to->size, (*e)->rhs->str), (*e)->str);
-            return new_ctype(TY_INT, 8);
+            *e = new_binop(EX_DIV, *e, new_integer_literal(lhs_type->base->size, (*e)->rhs->str), (*e)->str);
+            return new_int();
         }
 
         error_at((*e)->str, "invalid subtraction between these types");
@@ -210,16 +222,18 @@ static CType *walk_expr(Expr **e)
     {
         CType *lhs_type = walk_expr(&(*e)->lhs);
         walk_expr(&(*e)->rhs);
+        (*e)->cty = lhs_type;
         return lhs_type;
     }
     case EX_ASSIGN:
     {
         CType *lhs_type = walk_expr(&(*e)->lhs);
-        CType *rhs_type = walk_expr(&(*e)->rhs);
-        if (lhs_type->kind != rhs_type->kind)
+        if (lhs_type->kind == TY_ARRAY)
         {
-            error_at((*e)->str, "invalid assignments between difference types");
+            error_at((*e)->str, "array type is not an lvalue");
         }
+        walk_expr(&(*e)->rhs);
+        (*e)->cty = lhs_type;
         return lhs_type;
     }
     default:
