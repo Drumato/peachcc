@@ -140,7 +140,7 @@ static void type_suffix(CType **cty, TokenList *tokens)
     *cty = new_array(*cty, array_len);
 }
 
-// "int"
+// "int" | "char"
 static CType *type_specifier(TokenList *tokens)
 {
     Token *cur = current_token(tokens);
@@ -150,6 +150,11 @@ static CType *type_specifier(TokenList *tokens)
     {
         expect(tokens, TK_INT);
         return new_int();
+    }
+    case TK_CHAR:
+    {
+        expect(tokens, TK_CHAR);
+        return new_char();
     }
     default:
         error_at(cur->str, "not allowed it in type-specifier");

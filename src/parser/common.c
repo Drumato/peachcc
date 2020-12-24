@@ -80,3 +80,9 @@ void insert_localvar_to_fn_env(Token *id, CType *cty)
         map_put(local_variables_in_cur_fn_g, id->str, lv);
     }
 }
+
+bool is_typename(TokenList *tokens)
+{
+    TokenKind cur = current_tk(tokens);
+    return cur == TK_INT || cur == TK_CHAR;
+}

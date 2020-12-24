@@ -83,6 +83,7 @@ enum TokenKind
     TK_INTEGER_LITERAL, // 整数
     TK_IDENTIFIER,      // 識別子
     TK_INT,             // "int"
+    TK_CHAR,            // "char"
     TK_RETURN,          // "return"
     TK_IF,              // "if"
     TK_ELSE,            // "else"
@@ -126,6 +127,7 @@ void progress(TokenList *tokens);
 enum CTypeKind
 {
     TY_INT,
+    TY_CHAR,
     TY_PTR,
     TY_ARRAY,
 };
@@ -146,6 +148,7 @@ struct CType
 };
 
 CType *new_int(void);
+CType *new_char(void);
 CType *new_ptr(CType *base);
 CType *new_array(CType *base, int array_len);
 
@@ -306,6 +309,7 @@ int expect_integer_literal(TokenList *tokens);
 bool eatable(TokenList *tokens, TokenKind k);
 
 bool at_eof(TokenList *tokens);
+bool is_typename(TokenList *tokens);
 
 Token *try_eat_identifier(TokenList *tokens);
 

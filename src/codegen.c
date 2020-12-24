@@ -2,6 +2,7 @@
 
 static FILE *output_file_g;
 static int label_num_g;
+static char *param_reg8_g[] = {"%dil", "%sil", "%dl", "%cl", "%r8b", "%r9b"};
 static char *param_reg64_g[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 static Function *cur_fn_g;
 static Map *global_variables_g;
@@ -20,6 +21,7 @@ static void out_newline(char *fmt, ...);
 static void gen_load(CType *cty);
 static void push_reg(char *reg);
 static void pop_reg(char *reg);
+static int align_to(int n, int align);
 
 void codegen(FILE *output_file, TranslationUnit *translation_unit)
 {
@@ -61,7 +63,14 @@ static void gen_fn(Function *fn)
     {
         char *param_name = fn->params->data[i];
         LocalVariable *lv = (LocalVariable *)map_get(cur_fn_g->local_variables, param_name, strlen(param_name));
-        out_newline("  mov -%zu[rbp], %s", lv->stack_offset, param_reg64_g[i]);
+        if (lv->cty->size == 1)
+        {
+            out_newline("  mov -%zu[rbp], %s", lv->stack_offset, param_reg8_g[i]);
+        }
+        else
+        {
+            out_newline("  mov -%zu[rbp], %s", lv->stack_offset, param_reg64_g[i]);
+        }
     }
 
     for (size_t i = 0; i < fn->stmts->len; i++)
@@ -352,9 +361,10 @@ static void gen_unary_op_expr(Expr *expr)
 // 関数プロローグの生成
 static void gen_function_prologue(int stack_size)
 {
+    int aligned_stack_size = align_to(stack_size, 16);
     push_reg("rbp");
     out_newline("  mov rbp, rsp");
-    out_newline("  sub rsp, %d", stack_size);
+    out_newline("  sub rsp, %d", aligned_stack_size);
 }
 // 関数エピローグの生成
 static void gen_function_epilogue(void)
@@ -385,7 +395,14 @@ static void gen_load(CType *cty)
         return;
     }
     pop_reg("rax");
-    out_newline("  mov rax, [rax]");
+    if (cty->size == 1)
+    {
+        out_newline("  movsx rax, BYTE PTR [rax]");
+    }
+    else
+    {
+        out_newline("  mov rax, [rax]");
+    }
     push_reg("rax");
 }
 // output_file_gに文字列を改行付きで書き込む
@@ -405,4 +422,11 @@ static void push_reg(char *reg)
 static void pop_reg(char *reg)
 {
     out_newline("  pop %s", reg);
+}
+
+// Round up `n` to the nearest multiple of `align`. For instance,
+// align_to(5, 8) returns 8 and align_to(11, 8) returns 16.
+static int align_to(int n, int align)
+{
+    return (n + align - 1) / align * align;
 }

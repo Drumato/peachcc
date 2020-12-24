@@ -142,7 +142,7 @@ static Vector *block_item_list(TokenList *tokens)
 
     while (!eatable(tokens, TK_RBRACE))
     {
-        if (eatable(tokens, TK_INT))
+        if (is_typename(tokens))
         {
             Decl *decl = declaration(tokens);
             insert_localvar_to_fn_env(decl->id, decl->cty);

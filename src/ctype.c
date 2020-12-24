@@ -12,6 +12,10 @@ CType *new_int(void)
 {
     return new_ctype(TY_INT, 8);
 }
+CType *new_char(void)
+{
+    return new_ctype(TY_CHAR, 1);
+}
 CType *new_ptr(CType *base)
 {
     CType *ptr = new_ctype(TY_PTR, 8);

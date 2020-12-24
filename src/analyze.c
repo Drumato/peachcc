@@ -231,7 +231,7 @@ static CType *walk_expr(Expr **e)
         CType *lhs_type = walk_expr(&(*e)->lhs);
         CType *rhs_type = walk_expr(&(*e)->rhs);
         (*e)->cty = lhs_type;
-        if (lhs_type->kind == TY_INT && rhs_type->kind == TY_INT)
+        if ((lhs_type->kind == TY_INT && rhs_type->kind == TY_INT) || (lhs_type->kind == TY_CHAR && rhs_type->kind == TY_CHAR))
         {
             return lhs_type;
         }

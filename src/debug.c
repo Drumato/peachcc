@@ -25,6 +25,9 @@ void dump_ctype(CType *cty)
     case TY_INT:
         fprintf(stderr, "int");
         break;
+    case TY_CHAR:
+        fprintf(stderr, "char");
+        break;
     case TY_PTR:
         dump_ctype(cty->base);
         fprintf(stderr, "*");
