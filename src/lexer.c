@@ -4,12 +4,13 @@ static TokenKind char_to_operator(char op);
 static Token *multilength_symbol(char *ptr);
 static Token *identifier(char *ptr);
 static Token *c_keyword(char *ptr);
+static Token *char_literal(char *ptr);
 
 void tokenize(TokenList *tokens, char *p)
 {
+    Token *t = NULL;
     while (*p)
     {
-
         // if文の順番を必ず保持すること．
         // 順番を変更すると正しくtokenize出来ない
 
@@ -20,8 +21,14 @@ void tokenize(TokenList *tokens, char *p)
             continue;
         }
 
+        if ((t = char_literal(p)) != NULL)
+        {
+            p += t->length;
+            vec_push(tokens, t);
+            continue;
+        }
+
         // 識別子よりも先に予約語のチェック
-        Token *t;
         if ((t = c_keyword(p)) != NULL)
         {
             p += t->length;
@@ -123,6 +130,27 @@ static Token *c_keyword(char *ptr)
     }
 
     return NULL;
+}
+// 文字リテラルのtokenize
+// エスケープはまだ対応しない
+static Token *char_literal(char *ptr)
+{
+    if (*ptr != '\'')
+    {
+        return NULL;
+    }
+    char *p = ptr + 1;
+    char c = *p++;
+    char *end = strchr(p, '\'');
+    if (end == NULL)
+    {
+        error_at(p, "unclosed char literal found");
+        return NULL;
+    }
+    end++;
+
+    Token *char_lit = new_integer_token(ptr, c, end - ptr);
+    return char_lit;
 }
 
 static TokenKind char_to_operator(char op)
