@@ -6,6 +6,7 @@ static Token *identifier(char *ptr);
 static Token *c_keyword(char *ptr);
 static Token *char_literal(char *ptr);
 static Token *string_literal(char *ptr);
+static int escaped_char(char *p);
 
 void tokenize(TokenList *tokens, char *p)
 {
@@ -147,7 +148,16 @@ static Token *char_literal(char *ptr)
         return NULL;
     }
     char *p = ptr + 1;
-    char c = *p++;
+    int value = 0;
+    if (*p == '\\')
+    {
+        value = escaped_char(p + 1);
+        p += 2;
+    }
+    else
+    {
+        value = *p++;
+    }
     char *end = strchr(p, '\'');
     if (end == NULL)
     {
@@ -156,7 +166,7 @@ static Token *char_literal(char *ptr)
     }
     end++;
 
-    Token *char_lit = new_integer_token(ptr, c, end - ptr);
+    Token *char_lit = new_integer_token(ptr, value, end - ptr);
     return char_lit;
 }
 // 文字列リテラルのtokenize
@@ -169,15 +179,23 @@ static Token *string_literal(char *ptr)
     }
     char *p = ptr + 1;
 
-    char *end = strchr(p, '"');
-    if (end == NULL)
+    int cur_pos = 0;
+    char *buf = (char *)calloc(1024, sizeof(char));
+    while (*p != '"')
     {
-        error_at(p, "unclosed string literal found");
-        return NULL;
+        if (*p == '\\')
+        {
+            buf[cur_pos++] = escaped_char(p + 1);
+            p += 2;
+            continue;
+        }
+        buf[cur_pos++] = *p;
+        p++;
     }
-    end++;
+    p++;
 
-    Token *str_lit = new_string_token(ptr, end - ptr);
+    Token *str_lit = new_string_token(ptr, p - ptr);
+    str_lit->copied_contents = buf;
 
     return str_lit;
 }
@@ -220,5 +238,34 @@ static TokenKind char_to_operator(char op)
         return TK_ASSIGN;
     default:
         return TK_EOF;
+    }
+}
+
+// エスケープシーケンスを読む
+static int escaped_char(char *p)
+{
+
+    // エスケープシーケンスを返してもいいらしいけど，あえて整数をそのまま返す
+    switch (*p)
+    {
+    case 'a':
+        return 0x07;
+    case 'b':
+        return 0x08;
+    case 't':
+        return 0x09;
+    case 'n':
+        return 0x0a;
+    case 'v':
+        return 0x0b;
+    case 'f':
+        return 0x0c;
+    case 'r':
+        return 0x0d;
+    // [GNU] \e for the ASCII escape character is a GNU C extension.
+    case 'e':
+        return 0x1b;
+    default:
+        return *p;
     }
 }

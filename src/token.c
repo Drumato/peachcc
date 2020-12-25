@@ -34,7 +34,7 @@ Token *new_string_token(char *str, size_t length)
     Token *tok = new_token(TK_STRING_LITERAL, str, length);
 
     // ダブルクオート2つを削除して length - 2分割り当てる
-    tok->copied_contents = (char *)calloc(length - 2, sizeof(char));
+    tok->copied_contents = (char *)calloc(length - 2 + 1, sizeof(char));
 
     // 中身がなんであれ，文字列リテラルの中身の長さは[始点+1, 終点-1]
     strncpy(tok->copied_contents, str + 1, length - 2);

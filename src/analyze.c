@@ -172,7 +172,7 @@ static CType *walk_expr(Expr **e)
                 return f->return_type;
             }
         }
-        error_at((*e)->str, "cannot analyze %s's return type", (*e)->copied_str);
+        // error_at((*e)->str, "cannot analyze %s's return type", (*e)->copied_str);
         return NULL;
     }
     case EX_UNARY_ADDR:
