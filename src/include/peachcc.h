@@ -81,6 +81,7 @@ enum TokenKind
     TK_COMMA,           // `,`
     TK_SEMICOLON,       // `;`
     TK_INTEGER_LITERAL, // 整数
+    TK_STRING_LITERAL,  // 文字列
     TK_IDENTIFIER,      // 識別子
     TK_INT,             // "int"
     TK_CHAR,            // "char"
@@ -104,7 +105,8 @@ struct Token
     /** メモリ上のソースコードを指すポインタ．
      * 各Tokenがこの文字列を所有しているわけではないので注意．
      **/
-    char *str; // デバッグ用や，識別子用
+    char *str;             // デバッグ用や，識別子用
+    char *copied_contents; // 文字列リテラル用．
     size_t length;
 };
 
@@ -112,6 +114,8 @@ typedef Vector TokenList;
 
 // 整数トークンの作成
 Token *new_integer_token(char *str, int value, size_t length);
+// 文字列トークンの作成
+Token *new_string_token(char *str, size_t length);
 // 識別子トークンの作成
 Token *new_identifier_token(char *str, size_t length);
 // 新しいトークンを作成する
@@ -170,6 +174,7 @@ typedef enum
     EX_UNARY_ADDR,  // 単項&
     EX_UNARY_DEREF, // 単項*
     EX_INTEGER,     // 整数リテラル
+    EX_STRING,      // 文字列リテラル
     EX_CALL,        // 呼び出し式
     EX_LOCAL_VAR,   // 識別子
     EX_ASSIGN,      // 代入式
@@ -186,7 +191,7 @@ struct Expr
     char *str; // デバッグで使用
     // 変数名で使用
     // コピーされているのでそのまま出力可能
-    char *copied_name;
+    char *copied_str;
     size_t length; // 変数名の長さ等
     ExprKind kind; // 式の型
     Expr *lhs;     // 左辺(2つのオペランドを取るノードで使用)
@@ -201,11 +206,14 @@ struct Expr
     // 式の型
     // analyze.cで型付けされる
     CType *cty;
+    // 文字列リテラルで使用.
+    int id;
 };
 
 Expr *new_unop(ExprKind op, Expr *child_expr, char *str);
 Expr *new_binop(ExprKind op, Expr *lhs, Expr *rhs, char *str);
 Expr *new_integer_literal(int value, char *str);
+Expr *new_string_literal(char *contents, char *str);
 Expr *new_identifier(char *str, size_t length);
 
 /// ast/stmt.c
@@ -285,6 +293,13 @@ struct LocalVariable
 };
 typedef struct LocalVariable LocalVariable;
 
+struct GlobalVariable
+{
+    CType *cty;
+    char *init_data;
+};
+typedef struct GlobalVariable GlobalVariable;
+
 LocalVariable *new_local_var(char *str, size_t length, CType *cty, size_t stack_offset);
 
 /// lexer.c
@@ -304,6 +319,7 @@ void expect(TokenList *tokens, TokenKind k);
 // 次のトークンが整数の場合，トークンを1つ読み進めてその数値を返す．
 // それ以外の場合にはエラーを報告する．
 int expect_integer_literal(TokenList *tokens);
+char *expect_string_literal(TokenList *tokens);
 
 // 現在見ているトークンが渡されたkと同じ種類かチェック
 bool eatable(TokenList *tokens, TokenKind k);
@@ -367,6 +383,8 @@ char *c_program_g;
 Token *cur_g;
 // パーサで用いる
 Map *local_variables_in_cur_fn_g;
+Map *global_variables_g;
+int str_id_g;
 // パース時にスタックオフセットを決定するために使用
 // 関数をパースする毎に，0に初期化する必要がある
 size_t total_stack_size_in_fn_g;

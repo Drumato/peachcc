@@ -5,6 +5,7 @@ static Token *multilength_symbol(char *ptr);
 static Token *identifier(char *ptr);
 static Token *c_keyword(char *ptr);
 static Token *char_literal(char *ptr);
+static Token *string_literal(char *ptr);
 
 void tokenize(TokenList *tokens, char *p)
 {
@@ -22,6 +23,12 @@ void tokenize(TokenList *tokens, char *p)
         }
 
         if ((t = char_literal(p)) != NULL)
+        {
+            p += t->length;
+            vec_push(tokens, t);
+            continue;
+        }
+        if ((t = string_literal(p)) != NULL)
         {
             p += t->length;
             vec_push(tokens, t);
@@ -151,6 +158,28 @@ static Token *char_literal(char *ptr)
 
     Token *char_lit = new_integer_token(ptr, c, end - ptr);
     return char_lit;
+}
+// 文字列リテラルのtokenize
+// エスケープはまだ対応しない
+static Token *string_literal(char *ptr)
+{
+    if (*ptr != '"')
+    {
+        return NULL;
+    }
+    char *p = ptr + 1;
+
+    char *end = strchr(p, '"');
+    if (end == NULL)
+    {
+        error_at(p, "unclosed string literal found");
+        return NULL;
+    }
+    end++;
+
+    Token *str_lit = new_string_token(ptr, end - ptr);
+
+    return str_lit;
 }
 
 static TokenKind char_to_operator(char op)

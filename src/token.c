@@ -27,6 +27,20 @@ Token *new_integer_token(char *str, int value, size_t length)
     tok->value = value;
     return tok;
 }
+// 文字列トークンの作成
+// 終点クオートの次
+Token *new_string_token(char *str, size_t length)
+{
+    Token *tok = new_token(TK_STRING_LITERAL, str, length);
+
+    // ダブルクオート2つを削除して length - 2分割り当てる
+    tok->copied_contents = (char *)calloc(length - 2, sizeof(char));
+
+    // 中身がなんであれ，文字列リテラルの中身の長さは[始点+1, 終点-1]
+    strncpy(tok->copied_contents, str + 1, length - 2);
+    tok->copied_contents[length - 2] = 0;
+    return tok;
+}
 
 // リスト中のposが指す現在の要素を見る
 Token *current_token(TokenList *tokens)

@@ -48,10 +48,10 @@ void dump_ast(TranslationUnit *translation_unit)
     for (size_t i = 0; i < translation_unit->global_variables->keys->len; i++)
     {
         char *glob_var_name = translation_unit->global_variables->keys->data[i];
-        CType *glob_var_ty = translation_unit->global_variables->vals->data[i];
+        GlobalVariable *glob_var = translation_unit->global_variables->vals->data[i];
 
         fprintf(stderr, "globals[%zu] = %s: ", i, glob_var_name);
-        dump_ctype(glob_var_ty);
+        dump_ctype(glob_var->cty);
 
         fprintf(stderr, "\n");
     }
@@ -154,7 +154,7 @@ static void dump_expr(Expr *e)
     {
     case EX_CALL:
     {
-        fprintf(stderr, "%s(", e->copied_name);
+        fprintf(stderr, "%s(", e->copied_str);
         for (size_t i = 0; i < e->params->len; i++)
         {
             Expr *param = (Expr *)e->params->data[i];
@@ -274,9 +274,12 @@ static void dump_expr(Expr *e)
     case EX_INTEGER:
         fprintf(stderr, "%d", e->value);
         break;
+    case EX_STRING:
+        fprintf(stderr, "%s", e->copied_str);
+        break;
     case EX_LOCAL_VAR:
     {
-        fprintf(stderr, "%s", e->copied_name);
+        fprintf(stderr, "%s", e->copied_str);
         break;
     }
     }

@@ -9,6 +9,8 @@ TranslationUnit *parse(TokenList *tokens)
     cur_g = current_token(tokens);
 
     TranslationUnit *translation_unit = new_translation_unit();
+    translation_unit->global_variables = new_map();
+    global_variables_g = translation_unit->global_variables;
     Vector *fns = new_vec();
     while (!at_eof(tokens))
     {
@@ -28,7 +30,10 @@ TranslationUnit *parse(TokenList *tokens)
             char *copied_name = (char *)calloc(global_decl->id->length, sizeof(char));
             strncpy(copied_name, global_decl->id->str, global_decl->id->length);
             copied_name[global_decl->id->length] = 0;
-            map_put(translation_unit->global_variables, copied_name, global_decl->cty);
+
+            GlobalVariable *glob_var = (GlobalVariable *)calloc(1, sizeof(GlobalVariable));
+            glob_var->cty = global_decl->cty;
+            map_put(translation_unit->global_variables, copied_name, glob_var);
             continue;
         }
 

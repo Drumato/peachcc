@@ -39,6 +39,20 @@ int expect_integer_literal(TokenList *tokens)
     return value;
 }
 
+// 次のトークンが文字列リテラルの場合，トークンを1つ読み進めてその内容を返す．
+char *expect_string_literal(TokenList *tokens)
+{
+    if (cur_g->kind != TK_STRING_LITERAL)
+    {
+        fprintf(stderr, "%d\n", cur_g->kind);
+        error_at(cur_g->str, "expected string literal");
+    }
+    char *str = cur_g->copied_contents;
+    progress(tokens);
+    cur_g = current_token(tokens);
+    return str;
+}
+
 // 現在見ているトークンが渡されたkと同じ種類かチェック
 bool eatable(TokenList *tokens, TokenKind k)
 {

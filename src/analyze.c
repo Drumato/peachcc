@@ -4,9 +4,6 @@
 // 関数の返り値の型を探す
 static Vector *functions_g;
 
-// グローバル変数のマップ
-static Map *global_variables_g;
-
 static void walk_fn(Function *f);
 
 static void walk_stmt(Stmt *s);
@@ -122,6 +119,16 @@ static CType *walk_expr(Expr **e)
     case EX_INTEGER:
         (*e)->cty = new_int();
         return (*e)->cty;
+    case EX_STRING:
+    {
+        // グローバルマップに登録されているものを使う
+        char *buf = (char *)calloc(20, sizeof(char));
+        sprintf(buf, ".L.str%d", (*e)->id);
+        GlobalVariable *glob_var = map_get(global_variables_g, buf, strlen(buf));
+        assert(glob_var);
+        (*e)->cty = glob_var->cty;
+        return glob_var->cty;
+    }
     case EX_LOCAL_VAR:
     {
         LocalVariable *lv = map_get(local_variables_in_cur_fn_g, (*e)->str, (*e)->length);
@@ -132,10 +139,10 @@ static CType *walk_expr(Expr **e)
         }
 
         // グローバル変数のマップからも探す
-        CType *global_ty = map_get(global_variables_g, (*e)->str, (*e)->length);
-        assert(global_ty);
-        (*e)->cty = global_ty;
-        return global_ty;
+        GlobalVariable *glob_var = map_get(global_variables_g, (*e)->str, (*e)->length);
+        assert(glob_var);
+        (*e)->cty = glob_var->cty;
+        return glob_var->cty;
     }
     case EX_UNARY_SIZEOF:
     {
@@ -147,7 +154,7 @@ static CType *walk_expr(Expr **e)
     case EX_CALL:
     {
         assert((*e)->params);
-        assert((*e)->copied_name);
+        assert((*e)->copied_str);
         for (size_t i = 0; i < (*e)->params->len; i++)
         {
             Expr *param = (*e)->params->data[i];
@@ -159,13 +166,13 @@ static CType *walk_expr(Expr **e)
         for (size_t i = 0; i < functions_g->len; i++)
         {
             Function *f = functions_g->data[i];
-            if (!strncmp(f->copied_name, (*e)->copied_name, (*e)->length))
+            if (!strncmp(f->copied_name, (*e)->copied_str, (*e)->length))
             {
                 (*e)->cty = f->return_type;
                 return f->return_type;
             }
         }
-        error_at((*e)->str, "cannot analyze %s's return type", (*e)->copied_name);
+        error_at((*e)->str, "cannot analyze %s's return type", (*e)->copied_str);
         return NULL;
     }
     case EX_UNARY_ADDR:

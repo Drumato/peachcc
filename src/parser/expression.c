@@ -184,7 +184,7 @@ static Expr *postfix_unary(TokenList *tokens)
     return e;
 }
 
-// paren-expr | integer-literal
+// paren-expr | integer-literal | string-literal
 static Expr *primary(TokenList *tokens)
 {
     if (eatable(tokens, TK_LPAREN))
@@ -197,10 +197,15 @@ static Expr *primary(TokenList *tokens)
     {
         return ident_expr(tokens, ident_loc);
     }
-
     char *loc = cur_g->str;
-    int value = expect_integer_literal(tokens);
-    return new_integer_literal(value, loc);
+    if (eatable(tokens, TK_INTEGER_LITERAL))
+    {
+        int value = expect_integer_literal(tokens);
+        return new_integer_literal(value, loc);
+    }
+
+    char *contents = expect_string_literal(tokens);
+    return new_string_literal(contents, loc);
 }
 
 // '(' expr ')'
