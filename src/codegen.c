@@ -2,7 +2,7 @@
 
 static FILE *output_file_g;
 static int label_num_g;
-static char *param_reg8_g[] = {"%dil", "%sil", "%dl", "%cl", "%r8b", "%r9b"};
+static char *param_reg8_g[] = {"dil", "sil", "dl", "cl", "r8b", "r9b"};
 static char *param_reg64_g[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 static Function *cur_fn_g;
 
@@ -27,6 +27,8 @@ void codegen(FILE *output_file, TranslationUnit *translation_unit)
     label_num_g = 0;
     output_file_g = output_file;
     global_variables_g = translation_unit->global_variables;
+
+    out_newline(".intel_syntax noprefix");
 
     for (size_t i = 0; i < global_variables_g->keys->len; i++)
     {
@@ -63,7 +65,6 @@ void codegen(FILE *output_file, TranslationUnit *translation_unit)
 static void gen_fn(Function *fn)
 {
     cur_fn_g = fn;
-    out_newline(".intel_syntax noprefix");
     out_newline(".globl %s", fn->copied_name);
     out_newline("%s:", fn->copied_name);
 
@@ -194,7 +195,7 @@ static void gen_expr(Expr *expr)
         out_newline("  push %d", expr->value);
         break;
     case EX_STRING:
-        out_newline("  push offset .L.str%d", expr->id);
+        out_newline("  push offset .str%d", expr->id);
         break;
     case EX_LOCAL_VAR:
         // gen_lvalue でアドレスをプッシュするだけでは変数式にならない
@@ -216,7 +217,13 @@ static void gen_expr(Expr *expr)
             pop_reg(param_reg64_g[i]);
         }
 
+        out_newline("	push rbp");
+        out_newline("	mov rbp, rsp");
+        out_newline("	and rsp, -16");
         out_newline("  call %s", expr->copied_str);
+
+        out_newline("	mov rsp, rbp");
+        out_newline("	pop rbp");
         push_reg("rax");
         break;
     }
@@ -395,7 +402,7 @@ static void gen_compare_rax_and_rdi_by(char *mode)
 {
     out_newline("  cmp rax, rdi");
     out_newline("  %s al", mode);
-    out_newline("  movzb rax, al");
+    out_newline("  movzx rax, al");
 }
 
 // raxに格納されたアドレスの中身を取り出す

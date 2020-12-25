@@ -123,7 +123,7 @@ static CType *walk_expr(Expr **e)
     {
         // グローバルマップに登録されているものを使う
         char *buf = (char *)calloc(20, sizeof(char));
-        sprintf(buf, ".L.str%d", (*e)->id);
+        sprintf(buf, ".str%d", (*e)->id);
         GlobalVariable *glob_var = map_get(global_variables_g, buf, strlen(buf));
         assert(glob_var);
         (*e)->cty = glob_var->cty;
@@ -155,12 +155,16 @@ static CType *walk_expr(Expr **e)
     {
         assert((*e)->params);
         assert((*e)->copied_str);
+        Vector *params = new_vec();
+
         for (size_t i = 0; i < (*e)->params->len; i++)
         {
             Expr *param = (*e)->params->data[i];
             CType *param_ty = walk_expr(&param);
             param->cty = param_ty;
+            vec_push(params, param);
         }
+        (*e)->params = params;
 
         // 関数の返り値型を得るため，関数列を走査
         for (size_t i = 0; i < functions_g->len; i++)

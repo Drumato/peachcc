@@ -10,8 +10,26 @@ void error_at(char *loc, char *fmt, ...)
     va_list ap;
     va_start(ap, fmt);
 
-    int pos = loc - c_program_g;
-    fprintf(stderr, "%s\n", c_program_g);
+    // locが含まれている行の開始地点と終了地点を取得
+    char *line = loc;
+    while (c_program_g < line && line[-1] != '\n')
+        line--;
+
+    char *end = loc;
+    while (*end != '\n')
+        end++;
+
+    // 見つかった行が全体の何行目なのかを調べる
+    int line_num = 1;
+    for (char *p = c_program_g; p < line; p++)
+        if (*p == '\n')
+            line_num++;
+
+    // 見つかった行を、ファイル名と行番号と一緒に表示
+    int indent = fprintf(stderr, "%s:L%d: ", peachcc_opt_g->input_file, line_num);
+    int pos = loc - line + indent;
+    fprintf(stderr, "%.*s\n", (int)(end - line), line);
+
     fprintf(stderr, "%*s", pos, " "); // pos個の空白を出力
     fprintf(stderr, "^ ");
     vfprintf(stderr, fmt, ap);

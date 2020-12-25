@@ -40,7 +40,7 @@ Expr *new_string_literal(char *contents, char *str)
     glob_var->cty = new_array(new_char(), strlen(contents) + 1);
     glob_var->init_data = e->copied_str;
     char *buf = calloc(20, sizeof(char));
-    sprintf(buf, ".L.str%d", str_id_g++);
+    sprintf(buf, ".str%d", str_id_g++);
     map_put(global_variables_g, buf, glob_var);
 
     return e;
