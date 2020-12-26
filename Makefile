@@ -22,7 +22,9 @@ test/%.exe: peachcc test/%.c
 test: $(TEST_OBJS)
 	@make clean
 
-self-host:
+self-host: peachcc
+	# 第一世代のコンパイルは済んでいる
+	
 
 clean:
 	@rm -f peachcc $(OBJS) $(TEST_OBJS) test/*.s *~ tmp* *.s

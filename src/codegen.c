@@ -225,13 +225,14 @@ static void gen_expr(Expr *expr)
             pop_reg(param_reg64_g[i]);
         }
 
-        out_newline("	push rbp");
-        out_newline("	mov rbp, rsp");
-        out_newline("	and rsp, -16");
+        out_newline("  push rbp");
+        out_newline("  mov rbp, rsp");
+        out_newline("  and rsp, -16");
+        out_newline("  mov rax, 0");
         out_newline("  call %s", expr->copied_str);
 
-        out_newline("	mov rsp, rbp");
-        out_newline("	pop rbp");
+        out_newline("  mov rsp, rbp");
+        out_newline("  pop rbp");
         push_reg("rax");
         break;
     }
@@ -249,6 +250,7 @@ static void gen_expr(Expr *expr)
     case EX_SUB:
     case EX_MUL:
     case EX_DIV:
+    case EX_MOD:
     case EX_LEEQ:
     case EX_LE:
     case EX_NTEQ:
@@ -335,6 +337,11 @@ static void gen_binop_expr(Expr *expr)
     case EX_DIV:
         out_newline("  cqo");
         out_newline("  idiv rdi");
+        break;
+    case EX_MOD:
+        out_newline("  cqo");
+        out_newline("  idiv rdi");
+        out_newline("  mov rax, rdx");
         break;
     case EX_EQ:
         gen_compare_rax_and_rdi_by("sete");

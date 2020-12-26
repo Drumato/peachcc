@@ -154,22 +154,28 @@ static Expr *addition(TokenList *tokens)
     return e;
 }
 
-// prefix_unary ('*' prefix_unary | '/' prefix_unary)*
+// prefix_unary ('*' prefix_unary | '/' prefix_unary | '%' prefix_unary)*
 static Expr *multiplication(TokenList *tokens)
 {
     Expr *e = prefix_unary(tokens);
 
     for (;;)
     {
+        char *loc = cur_g->str;
         // `*`
         if (try_eat(tokens, TK_STAR))
         {
-            e = new_binop(EX_MUL, e, prefix_unary(tokens), cur_g->str);
+            e = new_binop(EX_MUL, e, prefix_unary(tokens), loc);
         }
         // `/`
         else if (try_eat(tokens, TK_SLASH))
         {
-            e = new_binop(EX_DIV, e, prefix_unary(tokens), cur_g->str);
+            e = new_binop(EX_DIV, e, prefix_unary(tokens), loc);
+        }
+        // `%`
+        else if (try_eat(tokens, TK_PERCENT))
+        {
+            e = new_binop(EX_MOD, e, prefix_unary(tokens), loc);
         }
         else
         {

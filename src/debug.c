@@ -225,6 +225,13 @@ static void dump_expr(Expr *e)
         dump_expr(e->rhs);
         fprintf(stderr, ")");
         break;
+    case EX_MOD:
+        fprintf(stderr, "ModExpr(");
+        dump_expr(e->lhs);
+        fprintf(stderr, ", ");
+        dump_expr(e->rhs);
+        fprintf(stderr, ")");
+        break;
     case EX_LE:
         fprintf(stderr, "LessThanExpr(");
         dump_expr(e->lhs);

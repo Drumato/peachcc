@@ -43,7 +43,7 @@ static void walk_fn(Function *f)
         assert(lv->str);
 
         lv->stack_offset = total_stack_size;
-        total_stack_size -= lv->cty->size;
+        total_stack_size = total_stack_size - lv->cty->size;
     }
 
     for (size_t i = 0; i < f->stmts->len; i++)
@@ -267,6 +267,7 @@ static CType *walk_expr(Expr **e)
     }
     case EX_MUL:
     case EX_DIV:
+    case EX_MOD:
     case EX_LEEQ:
     case EX_LE:
     case EX_NTEQ:

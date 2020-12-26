@@ -64,6 +64,7 @@ enum TokenKind
     TK_MINUS,     // `-`
     TK_STAR,      // `*`
     TK_SLASH,     // `/`
+    TK_PERCENT,   // `%`
     TK_AMPERSAND, // `&`
     TK_LPAREN,    // `(`
     TK_RPAREN,    // `)`
@@ -169,6 +170,7 @@ typedef enum
     EX_SUB,         // 減算
     EX_MUL,         // 乗算
     EX_DIV,         // 除算
+    EX_MOD,         // 剰余算
     EX_LE,          // `lhs < rhs`
     EX_GE,          // `lhs > rhs`
     EX_LEEQ,        // `lhs <= rhs`

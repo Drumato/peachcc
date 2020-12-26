@@ -88,7 +88,7 @@ void insert_localvar_to_fn_env(Token *id, CType *cty)
     LocalVariable *lv;
     if ((lv = (LocalVariable *)map_get(local_variables_in_cur_fn_g, id->str, id->length)) == NULL)
     {
-        total_stack_size_in_fn_g += cty->size;
+        total_stack_size_in_fn_g = total_stack_size_in_fn_g + cty->size;
         lv = new_local_var(id->str, id->length, cty, 0);
         lv->cty = cty;
         map_put(local_variables_in_cur_fn_g, id->str, lv);

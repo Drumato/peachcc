@@ -24,7 +24,7 @@ void tokenize(TokenList *tokens, char *p)
         }
         if (!strncmp(p, "//", 2))
         {
-            p += 2;
+            p = p + 2;
             while (*p != '\n')
                 p++;
             continue;
@@ -40,13 +40,13 @@ void tokenize(TokenList *tokens, char *p)
 
         if ((t = char_literal(p)) != NULL)
         {
-            p += t->length;
+            p = p + t->length;
             vec_push(tokens, t);
             continue;
         }
         if ((t = string_literal(p)) != NULL)
         {
-            p += t->length;
+            p = p + t->length;
             vec_push(tokens, t);
             continue;
         }
@@ -54,7 +54,7 @@ void tokenize(TokenList *tokens, char *p)
         // 識別子よりも先に予約語のチェック
         if ((t = c_keyword(p)) != NULL)
         {
-            p += t->length;
+            p = p + t->length;
             vec_push(tokens, t);
             continue;
         }
@@ -62,7 +62,7 @@ void tokenize(TokenList *tokens, char *p)
         if (isalpha(*p) || *p == '_')
         {
             Token *id = identifier(p);
-            p += id->length;
+            p = p + id->length;
             vec_push(tokens, id);
             continue;
         }
@@ -71,12 +71,12 @@ void tokenize(TokenList *tokens, char *p)
         // 一文字の記号のtokinizeがstrchr()で簡略化できる．
         if ((t = multilength_symbol(p)) != NULL)
         {
-            p += t->length;
+            p = p + t->length;
             vec_push(tokens, t);
             continue;
         }
 
-        if (strchr("+-*/(){}[]<>;=,&", *p) != NULL)
+        if (strchr("+-*/(){}[]<>;=,%&", *p) != NULL)
         {
             TokenKind op = char_to_operator(*p);
             vec_push(tokens, new_token(op, p++, 1));
@@ -182,7 +182,7 @@ static Token *char_literal(char *ptr)
     {
         int length = 0;
         value = escaped_char(p + 1, &length);
-        p += length;
+        p = p + length;
     }
     else
     {
@@ -216,7 +216,7 @@ static Token *string_literal(char *ptr)
         {
             int length;
             buf[cur_pos++] = escaped_char(p + 1, &length);
-            p += length;
+            p = p + length;
             continue;
         }
         buf[cur_pos++] = *p;
@@ -242,6 +242,8 @@ static TokenKind char_to_operator(char op)
         return TK_STAR;
     case '/':
         return TK_SLASH;
+    case '%':
+        return TK_PERCENT;
     case '&':
         return TK_AMPERSAND;
     case '(':
