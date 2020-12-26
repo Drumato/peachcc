@@ -6,7 +6,7 @@ static Token *identifier(char *ptr);
 static Token *c_keyword(char *ptr);
 static Token *char_literal(char *ptr);
 static Token *string_literal(char *ptr);
-static int escaped_char(char *p);
+static int escaped_char(char *p, int *length);
 
 void tokenize(TokenList *tokens, char *p)
 {
@@ -155,7 +155,6 @@ static Token *c_keyword(char *ptr)
     return NULL;
 }
 // 文字リテラルのtokenize
-// エスケープはまだ対応しない
 static Token *char_literal(char *ptr)
 {
     if (*ptr != '\'')
@@ -166,8 +165,9 @@ static Token *char_literal(char *ptr)
     int value = 0;
     if (*p == '\\')
     {
-        value = escaped_char(p + 1);
-        p += 2;
+        int length = 0;
+        value = escaped_char(p + 1, &length);
+        p += length;
     }
     else
     {
@@ -185,7 +185,6 @@ static Token *char_literal(char *ptr)
     return char_lit;
 }
 // 文字列リテラルのtokenize
-// エスケープはまだ対応しない
 static Token *string_literal(char *ptr)
 {
     if (*ptr != '"')
@@ -200,8 +199,9 @@ static Token *string_literal(char *ptr)
     {
         if (*p == '\\')
         {
-            buf[cur_pos++] = escaped_char(p + 1);
-            p += 2;
+            int length;
+            buf[cur_pos++] = escaped_char(p + 1, &length);
+            p += length;
             continue;
         }
         buf[cur_pos++] = *p;
@@ -257,9 +257,9 @@ static TokenKind char_to_operator(char op)
 }
 
 // エスケープシーケンスを読む
-static int escaped_char(char *p)
+static int escaped_char(char *p, int *length)
 {
-
+    *length = 2;
     // エスケープシーケンスを返してもいいらしいけど，あえて整数をそのまま返す
     switch (*p)
     {
@@ -280,7 +280,23 @@ static int escaped_char(char *p)
     // [GNU] \e for the ASCII escape character is a GNU C extension.
     case 'e':
         return 0x1b;
+    case 'x':
+    {
+        char *hex = p + 1;
+        int value = strtol(hex, &hex, 16);
+        *length = hex - p;
+        return value;
+    }
     default:
+    {
+        if ('0' <= *p && *p <= '7')
+        {
+            char *octal = p;
+            int value = strtol(p, &octal, 8);
+            *length = octal - p;
+            return value;
+        }
         return *p;
+    }
     }
 }
