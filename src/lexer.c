@@ -70,8 +70,23 @@ void tokenize(TokenList *tokens, char *p)
 
         if (isdigit(*p))
         {
+            int value = 0;
             char *intlit_loc = p;
-            int value = strtol(p, &p, 10);
+
+            if (*p == '0' && isdigit(*(p + 1)))
+            {
+                // 8進数
+                value = strtol(p, &p, 8);
+            }
+            else if (*p == '0' && *(p + 1) == 'x' && isdigit(*(p + 2)))
+            {
+                // 16進数
+                value = strtol(p, &p, 16);
+            }
+            else
+            {
+                value = strtol(p, &p, 10);
+            }
             Token *intlit = new_integer_token(intlit_loc, value, p - intlit_loc);
             vec_push(tokens, intlit);
             continue;
