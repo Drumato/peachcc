@@ -255,6 +255,8 @@ static void gen_expr(Expr *expr)
     case EX_EQ:
     case EX_GE:
     case EX_GEEQ:
+    case EX_LOGOR:
+    case EX_LOGAND:
         gen_binop_expr(expr);
         break;
     case EX_ASSIGN:
@@ -351,6 +353,12 @@ static void gen_binop_expr(Expr *expr)
         break;
     case EX_LEEQ:
         gen_compare_rax_and_rdi_by("setle");
+        break;
+    case EX_LOGOR:
+        out_newline("  or rax, rdi");
+        break;
+    case EX_LOGAND:
+        out_newline("  and rax, rdi");
         break;
     default:
         error_at(expr->str, "It's not a binary operation");

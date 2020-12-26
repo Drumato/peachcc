@@ -273,6 +273,8 @@ static CType *walk_expr(Expr **e)
     case EX_EQ:
     case EX_GE:
     case EX_GEEQ:
+    case EX_LOGAND:
+    case EX_LOGOR:
     {
         assert((*e)->lhs);
         assert((*e)->rhs);

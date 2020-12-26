@@ -267,6 +267,20 @@ static void dump_expr(Expr *e)
         dump_expr(e->rhs);
         fprintf(stderr, ")");
         break;
+    case EX_LOGOR:
+        fprintf(stderr, "LogOrExpr(");
+        dump_expr(e->lhs);
+        fprintf(stderr, ", ");
+        dump_expr(e->rhs);
+        fprintf(stderr, ")");
+        break;
+    case EX_LOGAND:
+        fprintf(stderr, "LogAndExpr(");
+        dump_expr(e->lhs);
+        fprintf(stderr, ", ");
+        dump_expr(e->rhs);
+        fprintf(stderr, ")");
+        break;
     case EX_UNARY_PLUS:
         fprintf(stderr, "UnaryPlusExpr(");
 

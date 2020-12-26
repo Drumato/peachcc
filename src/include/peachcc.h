@@ -60,25 +60,28 @@ void *map_get(Map *map, char *key, size_t length);
 // Tokenの種類
 enum TokenKind
 {
-    TK_PLUS,            // `+`
-    TK_MINUS,           // `-`
-    TK_STAR,            // `*`
-    TK_SLASH,           // `/`
-    TK_AMPERSAND,       // `&`
-    TK_LPAREN,          // `(`
-    TK_RPAREN,          // `)`
-    TK_LBRACKET,        // `[`
-    TK_RBRACKET,        // `]`
-    TK_LBRACE,          // `{`
-    TK_RBRACE,          // `}`
-    TK_LE,              // `<`
-    TK_GE,              // `>`
-    TK_LEEQ,            // `<=`
-    TK_GEEQ,            // `>=`
-    TK_EQ,              // `==`
-    TK_NTEQ,            // `!=`
-    TK_INCREMENT,       // `++`
-    TK_DECREMENT,       // `--`
+    TK_PLUS,      // `+`
+    TK_MINUS,     // `-`
+    TK_STAR,      // `*`
+    TK_SLASH,     // `/`
+    TK_AMPERSAND, // `&`
+    TK_LPAREN,    // `(`
+    TK_RPAREN,    // `)`
+    TK_LBRACKET,  // `[`
+    TK_RBRACKET,  // `]`
+    TK_LBRACE,    // `{`
+    TK_RBRACE,    // `}`
+    TK_LE,        // `<`
+    TK_GE,        // `>`
+    TK_LEEQ,      // `<=`
+    TK_GEEQ,      // `>=`
+    TK_EQ,        // `==`
+    TK_NTEQ,      // `!=`
+    TK_INCREMENT, // `++`
+    TK_DECREMENT, // `--`
+    TK_LOGAND,    // `&&`
+    TK_LOGOR,     // `||`
+
     TK_ASSIGN,          // `=`
     TK_COMMA,           // `,`
     TK_SEMICOLON,       // `;`
@@ -172,6 +175,8 @@ typedef enum
     EX_GEEQ,        // `lhs >= rhs`
     EX_EQ,          // `lhs == rhs`
     EX_NTEQ,        // `lhs != rhs`
+    EX_LOGOR,       // `lhs || rhs`
+    EX_LOGAND,      // `lhs && rhs`
     EX_UNARY_PLUS,  // 単項+
     EX_UNARY_MINUS, // 単項-
     EX_UNARY_ADDR,  // 単項&

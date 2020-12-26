@@ -4,6 +4,8 @@
 // expr parsers;
 Expr *expression(TokenList *tokens);
 static Expr *assign(TokenList *tokens);
+static Expr *logor(TokenList *tokens);
+static Expr *logand(TokenList *tokens);
 static Expr *equality(TokenList *tokens);
 static Expr *relation(TokenList *tokens);
 static Expr *addition(TokenList *tokens);
@@ -21,16 +23,47 @@ Expr *expression(TokenList *tokens)
     return assign(tokens);
 }
 
-// equality ("=" assign)?
+// logor ("=" assign)?
 static Expr *assign(TokenList *tokens)
 {
-    Expr *e = equality(tokens);
+    Expr *e = logor(tokens);
     if (try_eat(tokens, TK_ASSIGN))
     {
         char *assign_loc = cur_g->str;
         e = new_binop(EX_ASSIGN, e, assign(tokens), assign_loc);
     }
 
+    return e;
+}
+
+// logand ('||' logand)*
+static Expr *logor(TokenList *tokens)
+{
+    Expr *e = logand(tokens);
+    for (;;)
+    {
+        char *loc = cur_g->str;
+        if (!try_eat(tokens, TK_LOGOR))
+        {
+            break;
+        }
+        e = new_binop(EX_LOGOR, e, logand(tokens), loc);
+    }
+    return e;
+}
+// equality ('||' equality)*
+static Expr *logand(TokenList *tokens)
+{
+    Expr *e = equality(tokens);
+    for (;;)
+    {
+        char *loc = cur_g->str;
+        if (!try_eat(tokens, TK_LOGAND))
+        {
+            break;
+        }
+        e = new_binop(EX_LOGAND, e, equality(tokens), loc);
+    }
     return e;
 }
 
