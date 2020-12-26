@@ -152,6 +152,24 @@ int main()
     char xx[10];
     assert(10, sizeof(xx));
 
+    int foo;
+    foo = 0;
+    assert(0, foo);
+    foo++;
+    assert(1, foo);
+    assert(1, foo++);
+    assert(2, foo);
+    assert(3, ++foo);
+    assert(3, foo);
+    assert(3, foo--);
+    assert(2, foo);
+    assert(1, --foo);
+    assert(1, foo);
+
+    int *bar;
+    bar = &foo;
+    assert(3, *bar++);
+
     printf("variable.c OK\n\n");
     return 0;
 }

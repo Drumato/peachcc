@@ -77,6 +77,8 @@ enum TokenKind
     TK_GEEQ,            // `>=`
     TK_EQ,              // `==`
     TK_NTEQ,            // `!=`
+    TK_INCREMENT,       // `++`
+    TK_DECREMENT,       // `--`
     TK_ASSIGN,          // `=`
     TK_COMMA,           // `,`
     TK_SEMICOLON,       // `;`

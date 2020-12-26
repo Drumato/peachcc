@@ -147,37 +147,63 @@ static Expr *multiplication(TokenList *tokens)
     return e;
 }
 
-// ('+' | '-' | '*' | '&' | "sizeof") prefix_unary) | postfix_unary
+// ('+' | '-' | '*' | '&' | "sizeof" | "++" | "--") prefix_unary) | postfix_unary
 static Expr *prefix_unary(TokenList *tokens)
 {
     Expr *e;
+    char *loc = cur_g->str;
 
     if (try_eat(tokens, TK_PLUS))
-        e = new_unop(EX_UNARY_PLUS, prefix_unary(tokens), cur_g->str);
+        e = new_unop(EX_UNARY_PLUS, prefix_unary(tokens), loc);
     else if (try_eat(tokens, TK_MINUS))
-        e = new_unop(EX_UNARY_MINUS, prefix_unary(tokens), cur_g->str);
+        e = new_unop(EX_UNARY_MINUS, prefix_unary(tokens), loc);
     else if (try_eat(tokens, TK_STAR))
-        e = new_unop(EX_UNARY_DEREF, prefix_unary(tokens), cur_g->str);
+        e = new_unop(EX_UNARY_DEREF, prefix_unary(tokens), loc);
     else if (try_eat(tokens, TK_AMPERSAND))
-        e = new_unop(EX_UNARY_ADDR, prefix_unary(tokens), cur_g->str);
+        e = new_unop(EX_UNARY_ADDR, prefix_unary(tokens), loc);
     else if (try_eat(tokens, TK_SIZEOF))
-        e = new_unop(EX_UNARY_SIZEOF, prefix_unary(tokens), cur_g->str);
+        e = new_unop(EX_UNARY_SIZEOF, prefix_unary(tokens), loc);
+    else if (try_eat(tokens, TK_INCREMENT))
+    {
+        // ++x は単に x = x + 1として良い
+        e = prefix_unary(tokens);
+        e = new_binop(EX_ASSIGN, e, new_binop(EX_ADD, e, new_integer_literal(1, loc), loc), loc);
+    }
+    else if (try_eat(tokens, TK_DECREMENT))
+    {
+        // --x は単に x = x - 1として良い
+        e = prefix_unary(tokens);
+        e = new_binop(EX_ASSIGN, e, new_binop(EX_SUB, e, new_integer_literal(1, loc), loc), loc);
+    }
     else
         e = postfix_unary(tokens);
     return e;
 }
 
-// primary ('[' expr ']')*
+// primary (('[' expr ']')* | '++' )?
 static Expr *postfix_unary(TokenList *tokens)
 {
+    Token *loc = current_token(tokens);
     Expr *e = primary(tokens);
 
-    // x[y] は単に *(x + y) として変換してしまう．
+    if (try_eat(tokens, TK_INCREMENT))
+    {
+        // i++ は (i = i + 1) - 1という式として見れる
+        e = new_binop(EX_SUB, new_binop(EX_ASSIGN, e, new_binop(EX_ADD, e, new_integer_literal(1, loc->str), loc->str), loc->str), new_integer_literal(1, loc->str), loc->str);
+        return e;
+    }
+    if (try_eat(tokens, TK_DECREMENT))
+    {
+        // i++ は (i = i - 1) + 1という式として見れる
+        e = new_binop(EX_ADD, new_binop(EX_ASSIGN, e, new_binop(EX_SUB, e, new_integer_literal(1, loc->str), loc->str), loc->str), new_integer_literal(1, loc->str), loc->str);
+        return e;
+    }
+
     while (try_eat(tokens, TK_LBRACKET))
     {
-        Token *loc = current_token(tokens);
         Expr *idx = expression(tokens);
         expect(tokens, TK_RBRACKET);
+        // x[y] は単に *(x + y) として変換してしまう．
         e = new_unop(EX_UNARY_DEREF, new_binop(EX_ADD, e, idx, loc->str), loc->str);
     }
 
