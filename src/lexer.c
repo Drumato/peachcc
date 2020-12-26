@@ -22,6 +22,21 @@ void tokenize(TokenList *tokens, char *p)
             p++;
             continue;
         }
+        if (!strncmp(p, "//", 2))
+        {
+            p += 2;
+            while (*p != '\n')
+                p++;
+            continue;
+        }
+        if (!strncmp(p, "/*", 2))
+        {
+            char *q = strstr(p + 2, "*/");
+            if (!q)
+                error_at(p, "unclosed block comment");
+            p = q + 2;
+            continue;
+        }
 
         if ((t = char_literal(p)) != NULL)
         {

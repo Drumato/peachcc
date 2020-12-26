@@ -68,7 +68,7 @@ static Decl *parameter_declaration(TokenList *tokens)
     return param;
 }
 
-// type-specifier
+// type-specifier | storage-class specifier
 // 後々 type-specifier declaration-specifiers? に変更
 // TypeSpecifier{Type *ty; bool is_static; } みたいなのを返すような変更も必要かも
 CType *declaration_specifiers(TokenList *tokens)
