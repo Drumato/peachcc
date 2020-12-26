@@ -1,6 +1,6 @@
 #include "peachcc.h"
 
-static int read_file(const char *file_path, char **buf);
+static int read_file(char *file_path, char **buf);
 static bool parse_cmd_args(int argc, char **argv, CompileOption **cmd_opt);
 
 int main(int argc, char **argv)
@@ -54,7 +54,7 @@ int main(int argc, char **argv)
     return 0;
 }
 
-static int read_file(const char *file_path, char **buf)
+static int read_file(char *file_path, char **buf)
 {
     int size, status, fd;
     struct stat s;
@@ -87,7 +87,7 @@ static bool parse_cmd_args(int argc, char **argv, CompileOption **cmd_opt)
     (*cmd_opt)->output_file = "asm.s";
     (*cmd_opt)->input_file = "main.c";
 
-    const struct option longopts[] = {
+    struct option longopts[] = {
         //{    *name,           has_arg, *flag, val },
         {"input_file", required_argument, 0, 'o'},
         {"output_file", required_argument, 0, 'o'},

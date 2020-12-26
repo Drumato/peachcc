@@ -100,3 +100,9 @@ bool is_typename(TokenList *tokens)
     TokenKind cur = current_tk(tokens);
     return cur == TK_INT || cur == TK_CHAR;
 }
+
+// "static"
+bool start_storage_class(TokenList *tokens)
+{
+    return current_tk(tokens) == TK_STATIC;
+}

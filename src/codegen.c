@@ -36,7 +36,11 @@ void codegen(FILE *output_file, TranslationUnit *translation_unit)
         GlobalVariable *glob_var = global_variables_g->vals->data[i];
 
         out_newline("\n  .data");
-        out_newline("  .globl %s", glob_var_name);
+        if (!glob_var->is_static)
+        {
+            // translation-unit外部にも公開する
+            out_newline("  .globl %s", glob_var_name);
+        }
         out_newline("%s:", glob_var_name);
         if (glob_var->init_data)
         {
@@ -65,7 +69,11 @@ void codegen(FILE *output_file, TranslationUnit *translation_unit)
 static void gen_fn(Function *fn)
 {
     cur_fn_g = fn;
-    out_newline(".globl %s", fn->copied_name);
+    if (!fn->is_static)
+    {
+        // translation-unit外部にも公開する
+        out_newline(".globl %s", fn->copied_name);
+    }
     out_newline("%s:", fn->copied_name);
 
     gen_function_prologue(fn->stack_size);

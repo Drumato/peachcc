@@ -7,28 +7,32 @@ static Token *init_declarator_list(CType **cty, TokenList *tokens);
 static Token *init_declarator(CType **cty, TokenList *tokens);
 static Token *direct_declarator(CType **cty, TokenList *tokens);
 static void type_suffix(CType **cty, TokenList *tokens);
+static void storage_class_specifier(TokenList *tokens, DeclarationSpecifier **decl);
 
 // declaration-specifiers init-declarator-list? ';'
 // 現状はこんな感じで良い
 Decl *declaration(TokenList *tokens)
 {
     Token *id;
-    CType *cty;
-    decl_spec(tokens, &id, &cty);
+    DeclarationSpecifier *declspec = decl_spec(tokens, &id);
     expect(tokens, TK_SEMICOLON);
 
     Decl *decl = (Decl *)calloc(1, sizeof(Decl));
-    decl->cty = cty;
+    decl->cty = declspec->cty;
     decl->id = id;
 
     return decl;
 }
 
-void decl_spec(TokenList *tokens, Token **id, CType **cty)
+// declaration_specifiersのラッパー
+// external declarationのパース時に，
+// 関数定義かグローバル変数宣言かをチェックするときにのみ用いる
+DeclarationSpecifier *decl_spec(TokenList *tokens, Token **id)
 {
-    *cty = type_specifier(tokens);
+    DeclarationSpecifier *decl = declaration_specifiers(tokens);
 
-    *id = init_declarator_list(cty, tokens);
+    *id = init_declarator_list(&decl->cty, tokens);
+    return decl;
 }
 
 // '(' parameter-declaration (',' parameter-declaration)? ')'
@@ -61,19 +65,37 @@ Vector *parameter_list(TokenList *tokens)
 static Decl *parameter_declaration(TokenList *tokens)
 {
     Decl *param = (Decl *)calloc(1, sizeof(Decl));
-    CType *cty = declaration_specifiers(tokens);
-    Token *id = declarator(&cty, tokens);
-    param->cty = cty;
+    DeclarationSpecifier *decl_spec = declaration_specifiers(tokens);
+    Token *id = declarator(&decl_spec->cty, tokens);
+    param->cty = decl_spec->cty;
     param->id = id;
     return param;
 }
 
-// type-specifier | storage-class specifier
+// type-specifier (type-specifier | storage-class specifier)*
 // 後々 type-specifier declaration-specifiers? に変更
-// TypeSpecifier{Type *ty; bool is_static; } みたいなのを返すような変更も必要かも
-CType *declaration_specifiers(TokenList *tokens)
+DeclarationSpecifier *declaration_specifiers(TokenList *tokens)
 {
-    return type_specifier(tokens);
+    DeclarationSpecifier *decl_spec = (DeclarationSpecifier *)calloc(1, sizeof(DeclarationSpecifier));
+    decl_spec->is_static = false;
+
+    while (true)
+    {
+        if (is_typename(tokens))
+        {
+            CType *ty = type_specifier(tokens);
+            decl_spec->cty = ty;
+            continue;
+        }
+        if (start_storage_class(tokens))
+        {
+            storage_class_specifier(tokens, &decl_spec);
+            continue;
+        }
+        break;
+    }
+
+    return decl_spec;
 }
 
 // init-declarator
@@ -160,4 +182,11 @@ static CType *type_specifier(TokenList *tokens)
         error_at(cur->str, "not allowed it in type-specifier");
     }
     return NULL;
+}
+
+// "static"
+static void storage_class_specifier(TokenList *tokens, DeclarationSpecifier **decl)
+{
+    expect(tokens, TK_STATIC);
+    (*decl)->is_static = true;
 }

@@ -1,6 +1,6 @@
 int case_id_g;
 
-int assert(int expected, int actual)
+static int assert(int expected, int actual)
 {
     if (expected == actual)
     {
@@ -15,38 +15,38 @@ int assert(int expected, int actual)
 
     return 0;
 }
-int ret3()
+static int ret3()
 {
     return 3;
     return 5;
 }
 
-int add2(int x, int y)
+static int add2(int x, int y)
 {
     return x + y;
 }
 
-int sub2(int x, int y)
+static int sub2(int x, int y)
 {
     return x - y;
 }
 
-int add6(int a, int b, int c, int d, int e, int f)
+static int add6(int a, int b, int c, int d, int e, int f)
 {
     return a + b + c + d + e + f;
 }
 
-int addx(int *x, int y)
+static int addx(int *x, int y)
 {
     return *x + y;
 }
 
-int sub_char(char a, char b, char c)
+static int sub_char(char a, char b, char c)
 {
     return a - b - c;
 }
 
-int fib(int x)
+static int fib(int x)
 {
     if (x <= 1)
         return 1;

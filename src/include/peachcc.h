@@ -17,8 +17,8 @@
 
 struct CompileOption
 {
-    const char *output_file;
-    const char *input_file;
+    char *output_file;
+    char *input_file;
     bool debug;
 };
 typedef struct CompileOption CompileOption;
@@ -93,6 +93,7 @@ enum TokenKind
     TK_FOR,             // "for"
     TK_WHILE,           // "while"
     TK_SIZEOF,          // "sizeof"
+    TK_STATIC,          // "static"
     TK_EOF,             // 入力の終わり
 };
 typedef enum TokenKind TokenKind;
@@ -268,6 +269,7 @@ struct Function
     Vector *params;
     // 返り値の型
     CType *return_type;
+    bool is_static;
 };
 typedef struct Function Function;
 
@@ -292,6 +294,8 @@ struct LocalVariable
     size_t length;
     CType *cty;
     size_t stack_offset;
+    // コンパイラ内で使用していないので，サポートしない
+    // bool is_static;
 };
 typedef struct LocalVariable LocalVariable;
 
@@ -299,6 +303,7 @@ struct GlobalVariable
 {
     CType *cty;
     char *init_data;
+    bool is_static;
 };
 typedef struct GlobalVariable GlobalVariable;
 
@@ -328,6 +333,7 @@ bool eatable(TokenList *tokens, TokenKind k);
 
 bool at_eof(TokenList *tokens);
 bool is_typename(TokenList *tokens);
+bool start_storage_class(TokenList *tokens);
 
 Token *try_eat_identifier(TokenList *tokens);
 
@@ -350,12 +356,18 @@ struct Decl
     Token *id;
 };
 typedef struct Decl Decl;
+struct DeclarationSpecifier
+{
+    bool is_static;
+    CType *cty;
+};
+typedef struct DeclarationSpecifier DeclarationSpecifier;
 
 Decl *declaration(TokenList *tokens);
-CType *declaration_specifiers(TokenList *tokens);
+DeclarationSpecifier *declaration_specifiers(TokenList *tokens);
 Token *declarator(CType **cty, TokenList *tokens);
 Vector *parameter_list(TokenList *tokens);
-void decl_spec(TokenList *tokens, Token **id, CType **cty);
+DeclarationSpecifier *decl_spec(TokenList *tokens, Token **id);
 
 /// parser/expression.c
 
