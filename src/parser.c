@@ -62,7 +62,7 @@ void expect(TokenList *tokens, TokenKind k)
 {
     if (!try_eat(tokens, k))
     {
-        error_at(cur_g->str, "unexpected token");
+        error_at(cur_g->str, cur_g->line, "unexpected token");
         exit(1);
     }
     cur_g = current_token(tokens);
@@ -74,7 +74,7 @@ int expect_integer_literal(TokenList *tokens)
 {
     if (cur_g->kind != TK_INTEGER_LITERAL)
     {
-        error_at(cur_g->str, "expected integer literal");
+        error_at(cur_g->str, cur_g->line, "expected integer literal");
     }
     int value = cur_g->value;
     progress(tokens);
@@ -88,7 +88,7 @@ char *expect_string_literal(TokenList *tokens)
     if (cur_g->kind != TK_STRING_LITERAL)
     {
         fprintf(stderr, "%d\n", cur_g->kind);
-        error_at(cur_g->str, "expected string literal");
+        error_at(cur_g->str, cur_g->line, "expected string literal");
     }
     char *str = cur_g->copied_contents;
     progress(tokens);
@@ -320,7 +320,7 @@ static CType *type_specifier(TokenList *tokens)
         return new_char();
     }
     default:
-        error_at(cur->str, "not allowed it in type-specifier");
+        error_at(cur->str, cur->line, "not allowed it in type-specifier");
     }
     return NULL;
 }
@@ -344,8 +344,8 @@ static Expr *assign(TokenList *tokens)
     Expr *e = conditional(tokens);
     if (try_eat(tokens, TK_ASSIGN))
     {
-        char *assign_loc = cur_g->str;
-        e = new_binop(EX_ASSIGN, e, assign(tokens), assign_loc);
+        Token *loc = cur_g;
+        e = new_binop(EX_ASSIGN, e, assign(tokens), loc->str, loc->line);
     }
 
     return e;
@@ -354,7 +354,7 @@ static Expr *assign(TokenList *tokens)
 // logor ('?' expression ':' conditinal)?
 static Expr *conditional(TokenList *tokens)
 {
-    char *loc = cur_g->str;
+    Token *loc = cur_g;
     Expr *e = logor(tokens);
     if (!try_eat(tokens, TK_QUESTION))
     {
@@ -364,7 +364,7 @@ static Expr *conditional(TokenList *tokens)
     Expr *cond = expression(tokens);
     expect(tokens, TK_COLON);
 
-    e = new_conditional_expr(cond, e, conditional(tokens), loc);
+    e = new_conditional_expr(cond, e, conditional(tokens), loc->str, loc->line);
     return e;
 }
 
@@ -374,12 +374,12 @@ static Expr *logor(TokenList *tokens)
     Expr *e = logand(tokens);
     for (;;)
     {
-        char *loc = cur_g->str;
+        Token *loc = cur_g;
         if (!try_eat(tokens, TK_LOGOR))
         {
             break;
         }
-        e = new_binop(EX_LOGOR, e, logand(tokens), loc);
+        e = new_binop(EX_LOGOR, e, logand(tokens), loc->str, loc->line);
     }
     return e;
 }
@@ -389,12 +389,12 @@ static Expr *logand(TokenList *tokens)
     Expr *e = equality(tokens);
     for (;;)
     {
-        char *loc = cur_g->str;
+        Token *loc = cur_g;
         if (!try_eat(tokens, TK_LOGAND))
         {
             break;
         }
-        e = new_binop(EX_LOGAND, e, equality(tokens), loc);
+        e = new_binop(EX_LOGAND, e, equality(tokens), loc->str, loc->line);
     }
     return e;
 }
@@ -406,15 +406,16 @@ static Expr *equality(TokenList *tokens)
 
     for (;;)
     {
+        Token *loc = cur_g;
         // `==`
         if (try_eat(tokens, TK_EQ))
         {
-            e = new_binop(EX_EQ, e, relation(tokens), cur_g->str);
+            e = new_binop(EX_EQ, e, relation(tokens), loc->str, loc->line);
         }
         // `!=`
         else if (try_eat(tokens, TK_NTEQ))
         {
-            e = new_binop(EX_NTEQ, e, relation(tokens), cur_g->str);
+            e = new_binop(EX_NTEQ, e, relation(tokens), loc->str, loc->line);
         }
         else
         {
@@ -432,25 +433,26 @@ static Expr *relation(TokenList *tokens)
 
     for (;;)
     {
+        Token *loc = cur_g;
         // `<`
         if (try_eat(tokens, TK_LE))
         {
-            e = new_binop(EX_LE, e, addition(tokens), cur_g->str);
+            e = new_binop(EX_LE, e, addition(tokens), loc->str, loc->line);
         }
         // `<=`
         else if (try_eat(tokens, TK_LEEQ))
         {
-            e = new_binop(EX_LEEQ, e, addition(tokens), cur_g->str);
+            e = new_binop(EX_LEEQ, e, addition(tokens), loc->str, loc->line);
         }
         // `>`
         else if (try_eat(tokens, TK_GE))
         {
-            e = new_binop(EX_GE, e, addition(tokens), cur_g->str);
+            e = new_binop(EX_GE, e, addition(tokens), loc->str, loc->line);
         }
         // `>=`
         else if (try_eat(tokens, TK_GEEQ))
         {
-            e = new_binop(EX_GEEQ, e, addition(tokens), cur_g->str);
+            e = new_binop(EX_GEEQ, e, addition(tokens), loc->str, loc->line);
         }
         else
         {
@@ -467,15 +469,16 @@ static Expr *addition(TokenList *tokens)
 
     for (;;)
     {
+        Token *loc = cur_g;
         // `+`
         if (try_eat(tokens, TK_PLUS))
         {
-            e = new_binop(EX_ADD, e, multiplication(tokens), cur_g->str);
+            e = new_binop(EX_ADD, e, multiplication(tokens), loc->str, loc->line);
         }
         // `-`
         else if (try_eat(tokens, TK_MINUS))
         {
-            e = new_binop(EX_SUB, e, multiplication(tokens), cur_g->str);
+            e = new_binop(EX_SUB, e, multiplication(tokens), loc->str, loc->line);
         }
         else
         {
@@ -493,21 +496,21 @@ static Expr *multiplication(TokenList *tokens)
 
     for (;;)
     {
-        char *loc = cur_g->str;
+        Token *loc = cur_g;
         // `*`
         if (try_eat(tokens, TK_STAR))
         {
-            e = new_binop(EX_MUL, e, prefix_unary(tokens), loc);
+            e = new_binop(EX_MUL, e, prefix_unary(tokens), loc->str, loc->line);
         }
         // `/`
         else if (try_eat(tokens, TK_SLASH))
         {
-            e = new_binop(EX_DIV, e, prefix_unary(tokens), loc);
+            e = new_binop(EX_DIV, e, prefix_unary(tokens), loc->str, loc->line);
         }
         // `%`
         else if (try_eat(tokens, TK_PERCENT))
         {
-            e = new_binop(EX_MOD, e, prefix_unary(tokens), loc);
+            e = new_binop(EX_MOD, e, prefix_unary(tokens), loc->str, loc->line);
         }
         else
         {
@@ -522,29 +525,29 @@ static Expr *multiplication(TokenList *tokens)
 static Expr *prefix_unary(TokenList *tokens)
 {
     Expr *e;
-    char *loc = cur_g->str;
+    Token *loc = cur_g;
 
     if (try_eat(tokens, TK_PLUS))
-        e = new_unop(EX_UNARY_PLUS, prefix_unary(tokens), loc);
+        e = new_unop(EX_UNARY_PLUS, prefix_unary(tokens), loc->str, loc->line);
     else if (try_eat(tokens, TK_MINUS))
-        e = new_unop(EX_UNARY_MINUS, prefix_unary(tokens), loc);
+        e = new_unop(EX_UNARY_MINUS, prefix_unary(tokens), loc->str, loc->line);
     else if (try_eat(tokens, TK_STAR))
-        e = new_unop(EX_UNARY_DEREF, prefix_unary(tokens), loc);
+        e = new_unop(EX_UNARY_DEREF, prefix_unary(tokens), loc->str, loc->line);
     else if (try_eat(tokens, TK_AMPERSAND))
-        e = new_unop(EX_UNARY_ADDR, prefix_unary(tokens), loc);
+        e = new_unop(EX_UNARY_ADDR, prefix_unary(tokens), loc->str, loc->line);
     else if (try_eat(tokens, TK_SIZEOF))
-        e = new_unop(EX_UNARY_SIZEOF, prefix_unary(tokens), loc);
+        e = new_unop(EX_UNARY_SIZEOF, prefix_unary(tokens), loc->str, loc->line);
     else if (try_eat(tokens, TK_INCREMENT))
     {
         // ++x は単に x = x + 1として良い
         e = prefix_unary(tokens);
-        e = new_binop(EX_ASSIGN, e, new_binop(EX_ADD, e, new_integer_literal(1, loc), loc), loc);
+        e = new_binop(EX_ASSIGN, e, new_binop(EX_ADD, e, new_integer_literal(1, loc->str, loc->line), loc->str, loc->line), loc->str, loc->line);
     }
     else if (try_eat(tokens, TK_DECREMENT))
     {
         // --x は単に x = x - 1として良い
         e = prefix_unary(tokens);
-        e = new_binop(EX_ASSIGN, e, new_binop(EX_SUB, e, new_integer_literal(1, loc), loc), loc);
+        e = new_binop(EX_ASSIGN, e, new_binop(EX_SUB, e, new_integer_literal(1, loc->str, loc->line), loc->str, loc->line), loc->str, loc->line);
     }
     else
         e = postfix_unary(tokens);
@@ -560,13 +563,13 @@ static Expr *postfix_unary(TokenList *tokens)
     if (try_eat(tokens, TK_INCREMENT))
     {
         // i++ は (i = i + 1) - 1という式として見れる
-        e = new_binop(EX_SUB, new_binop(EX_ASSIGN, e, new_binop(EX_ADD, e, new_integer_literal(1, loc->str), loc->str), loc->str), new_integer_literal(1, loc->str), loc->str);
+        e = new_binop(EX_SUB, new_binop(EX_ASSIGN, e, new_binop(EX_ADD, e, new_integer_literal(1, loc->str, loc->line), loc->str, loc->line), loc->str, loc->line), new_integer_literal(1, loc->str, loc->line), loc->str, loc->line);
         return e;
     }
     if (try_eat(tokens, TK_DECREMENT))
     {
         // i++ は (i = i - 1) + 1という式として見れる
-        e = new_binop(EX_ADD, new_binop(EX_ASSIGN, e, new_binop(EX_SUB, e, new_integer_literal(1, loc->str), loc->str), loc->str), new_integer_literal(1, loc->str), loc->str);
+        e = new_binop(EX_ADD, new_binop(EX_ASSIGN, e, new_binop(EX_SUB, e, new_integer_literal(1, loc->str, loc->line), loc->str, loc->line), loc->str, loc->line), new_integer_literal(1, loc->str, loc->line), loc->str, loc->line);
         return e;
     }
 
@@ -575,7 +578,7 @@ static Expr *postfix_unary(TokenList *tokens)
         Expr *idx = expression(tokens);
         expect(tokens, TK_RBRACKET);
         // x[y] は単に *(x + y) として変換してしまう．
-        e = new_unop(EX_UNARY_DEREF, new_binop(EX_ADD, e, idx, loc->str), loc->str);
+        e = new_unop(EX_UNARY_DEREF, new_binop(EX_ADD, e, idx, loc->str, loc->line), loc->str, loc->line);
     }
 
     return e;
@@ -594,15 +597,15 @@ static Expr *primary(TokenList *tokens)
     {
         return ident_expr(tokens, ident_loc);
     }
-    char *loc = cur_g->str;
+    Token *loc = cur_g;
     if (eatable(tokens, TK_INTEGER_LITERAL))
     {
         int value = expect_integer_literal(tokens);
-        return new_integer_literal(value, loc);
+        return new_integer_literal(value, loc->str, loc->line);
     }
 
     char *contents = expect_string_literal(tokens);
-    return new_string_literal(contents, loc);
+    return new_string_literal(contents, loc->str, loc->line);
 }
 
 // '(' expr ')'
@@ -618,7 +621,7 @@ static Expr *paren_expr(TokenList *tokens)
 /// identifier | call_expr
 static Expr *ident_expr(TokenList *tokens, Token *ident_loc)
 {
-    Expr *id = new_identifier(ident_loc->str, ident_loc->length);
+    Expr *id = new_identifier(ident_loc->str, ident_loc->length, ident_loc->line);
 
     if (!eatable(tokens, TK_LPAREN))
     {
@@ -661,7 +664,7 @@ Stmt *statement(TokenList *tokens)
     {
         Token *loc = current_token(tokens);
 
-        Stmt *s = new_stmt(ST_COMPOUND, loc->str);
+        Stmt *s = new_stmt(ST_COMPOUND, loc->str, loc->line);
         s->body = compound_stmt(tokens);
         return s;
     }
@@ -679,11 +682,11 @@ Stmt *statement(TokenList *tokens)
 // "return" expression ';'
 static Stmt *return_stmt(TokenList *tokens)
 {
-    char *loc = cur_g->str;
+    Token *loc = cur_g;
     expect(tokens, TK_RETURN);
     Expr *e = expression(tokens);
     expect(tokens, TK_SEMICOLON);
-    Stmt *s = new_stmt(ST_RETURN, loc);
+    Stmt *s = new_stmt(ST_RETURN, loc->str, loc->line);
     s->expr = e;
     return s;
 }
@@ -691,14 +694,14 @@ static Stmt *return_stmt(TokenList *tokens)
 // "while" '(' expression ')' statement
 static Stmt *while_stmt(TokenList *tokens)
 {
-    char *loc = cur_g->str;
+    Token *loc = cur_g;
     expect(tokens, TK_WHILE);
     expect(tokens, TK_LPAREN);
     Expr *condition = expression(tokens);
     expect(tokens, TK_RPAREN);
 
     Stmt *then = statement(tokens);
-    Stmt *s = new_stmt(ST_WHILE, loc);
+    Stmt *s = new_stmt(ST_WHILE, loc->str, loc->line);
     s->cond = condition;
     s->then = then;
     return s;
@@ -707,14 +710,14 @@ static Stmt *while_stmt(TokenList *tokens)
 // "if" '(' expression ')' statement ("else" statement)?
 static Stmt *if_stmt(TokenList *tokens)
 {
-    char *loc = cur_g->str;
+    Token *loc = cur_g;
     expect(tokens, TK_IF);
     expect(tokens, TK_LPAREN);
     Expr *condition = expression(tokens);
     expect(tokens, TK_RPAREN);
 
     Stmt *then = statement(tokens);
-    Stmt *s = new_stmt(ST_IF, loc);
+    Stmt *s = new_stmt(ST_IF, loc->str, loc->line);
     s->cond = condition;
     s->then = then;
 
@@ -730,11 +733,11 @@ static Stmt *if_stmt(TokenList *tokens)
 // "for" '(' expression? ';' expression? ';' expression?')' statement
 static Stmt *for_stmt(TokenList *tokens)
 {
-    char *loc = cur_g->str;
+    Token *loc = cur_g;
 
     expect(tokens, TK_FOR);
     expect(tokens, TK_LPAREN);
-    Stmt *s = new_stmt(ST_FOR, loc);
+    Stmt *s = new_stmt(ST_FOR, loc->str, loc->line);
     if (!try_eat(tokens, TK_SEMICOLON))
     {
         s->init = expression(tokens);
@@ -771,10 +774,10 @@ Vector *compound_stmt(TokenList *tokens)
 // expression ';'
 static Stmt *expr_stmt(TokenList *tokens)
 {
-    char *loc = cur_g->str;
+    Token *loc = cur_g;
     Expr *e = expression(tokens);
     expect(tokens, TK_SEMICOLON);
-    Stmt *s = new_stmt(ST_EXPR, loc);
+    Stmt *s = new_stmt(ST_EXPR, loc->str, loc->line);
     s->expr = e;
     return s;
 }

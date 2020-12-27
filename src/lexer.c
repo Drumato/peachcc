@@ -1,5 +1,6 @@
 
 #include "peachcc.h"
+static size_t line_num_g;
 static TokenKind char_to_operator(char op);
 static Token *multilength_symbol(char *ptr);
 static Token *identifier(char *ptr);
@@ -10,6 +11,7 @@ static int escaped_char(char *p, int *length);
 
 void tokenize(TokenList *tokens, char *p)
 {
+    line_num_g = 1;
     Token *t = NULL;
     while (*p)
     {
@@ -19,6 +21,10 @@ void tokenize(TokenList *tokens, char *p)
         // 空白文字をスキップ
         if (isspace(*p))
         {
+            if (*p == '\n')
+            {
+                line_num_g++;
+            }
             p++;
             continue;
         }
@@ -33,7 +39,17 @@ void tokenize(TokenList *tokens, char *p)
         {
             char *q = strstr(p + 2, "*/");
             if (!q)
-                error_at(p, "unclosed block comment");
+                error_at(p, line_num_g, "unclosed block comment");
+
+            while (p != q)
+            {
+                // 改行数える
+                if (*p == '\n')
+                {
+                    line_num_g++;
+                }
+                p++;
+            }
             p = q + 2;
             continue;
         }
@@ -79,7 +95,7 @@ void tokenize(TokenList *tokens, char *p)
         if (strchr("+-*/(){}[]<>;=,%&?:", *p) != NULL)
         {
             TokenKind op = char_to_operator(*p);
-            vec_push(tokens, new_token(op, p++, 1));
+            vec_push(tokens, new_token(op, p++, 1, line_num_g));
             continue;
         }
 
@@ -102,15 +118,15 @@ void tokenize(TokenList *tokens, char *p)
             {
                 value = strtol(p, &p, 10);
             }
-            Token *intlit = new_integer_token(intlit_loc, value, p - intlit_loc);
+            Token *intlit = new_integer_token(intlit_loc, value, p - intlit_loc, line_num_g);
             vec_push(tokens, intlit);
             continue;
         }
 
-        error_at(p, "can't tokenize");
+        error_at(p, line_num_g, "can't tokenize");
     }
 
-    vec_push(tokens, new_token(TK_EOF, p, 0));
+    vec_push(tokens, new_token(TK_EOF, p, 0, line_num_g));
     return;
 }
 
@@ -127,7 +143,7 @@ static Token *identifier(char *ptr)
     {
         p++;
     }
-    return new_identifier_token(ptr, p - ptr);
+    return new_identifier_token(ptr, p - ptr, line_num_g);
 }
 
 static Token *multilength_symbol(char *ptr)
@@ -141,7 +157,7 @@ static Token *multilength_symbol(char *ptr)
     {
         if (!strncmp(ptr, symbols[i], strlen(symbols[i])))
         {
-            return new_token(kinds[i], ptr, 2);
+            return new_token(kinds[i], ptr, 2, line_num_g);
         }
     }
 
@@ -163,7 +179,7 @@ static Token *c_keyword(char *ptr)
         bool is_not_an_identifier = !isalnum(ptr[keyword_len]) && ptr[keyword_len] != '_';
         if (starts_with_keyword && is_not_an_identifier)
         {
-            return new_token(kinds[i], ptr, keyword_len);
+            return new_token(kinds[i], ptr, keyword_len, line_num_g);
         }
     }
 
@@ -191,12 +207,12 @@ static Token *char_literal(char *ptr)
     char *end = strchr(p, '\'');
     if (end == NULL)
     {
-        error_at(p, "unclosed char literal found");
+        error_at(p, line_num_g, "unclosed char literal found");
         return NULL;
     }
     end++;
 
-    Token *char_lit = new_integer_token(ptr, value, end - ptr);
+    Token *char_lit = new_integer_token(ptr, value, end - ptr, line_num_g);
     return char_lit;
 }
 // 文字列リテラルのtokenize
@@ -224,7 +240,7 @@ static Token *string_literal(char *ptr)
     }
     p++;
 
-    Token *str_lit = new_string_token(ptr, p - ptr);
+    Token *str_lit = new_string_token(ptr, p - ptr, line_num_g);
     str_lit->copied_contents = buf;
 
     return str_lit;

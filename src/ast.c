@@ -1,41 +1,41 @@
 #include "peachcc.h"
 
-static Expr *new_expr(ExprKind k, char *str);
+static Expr *new_expr(ExprKind k, char *str, size_t line_num);
 
-Expr *new_conditional_expr(Expr *cond, Expr *lhs, Expr *rhs, char *str)
+Expr *new_conditional_expr(Expr *cond, Expr *lhs, Expr *rhs, char *str, size_t line_num)
 {
-    Expr *e = new_expr(EX_CONDITION, str);
+    Expr *e = new_expr(EX_CONDITION, str, line_num);
     e->cond = cond;
     e->lhs = lhs;
     e->rhs = rhs;
     return e;
 }
 
-Expr *new_binop(ExprKind op, Expr *lhs, Expr *rhs, char *str)
+Expr *new_binop(ExprKind op, Expr *lhs, Expr *rhs, char *str, size_t line_num)
 {
-    Expr *e = new_expr(op, str);
+    Expr *e = new_expr(op, str, line_num);
     e->lhs = lhs;
     e->rhs = rhs;
     return e;
 }
 
-Expr *new_unop(ExprKind op, Expr *child_expr, char *str)
+Expr *new_unop(ExprKind op, Expr *child_expr, char *str, size_t line_num)
 {
-    Expr *e = new_expr(op, str);
+    Expr *e = new_expr(op, str, line_num);
     e->unary_op = child_expr;
     return e;
 }
 
-Expr *new_integer_literal(int value, char *str)
+Expr *new_integer_literal(int value, char *str, size_t line_num)
 {
-    Expr *e = new_expr(EX_INTEGER, str);
+    Expr *e = new_expr(EX_INTEGER, str, line_num);
     e->value = value;
     return e;
 }
 
-Expr *new_string_literal(char *contents, char *str)
+Expr *new_string_literal(char *contents, char *str, size_t line_num)
 {
-    Expr *e = new_expr(EX_STRING, str);
+    Expr *e = new_expr(EX_STRING, str, line_num);
     e->copied_str = (char *)calloc(strlen(contents), sizeof(char));
     strncpy(e->copied_str, contents, strlen(contents));
     e->copied_str[strlen(contents)] = 0;
@@ -54,20 +54,21 @@ Expr *new_string_literal(char *contents, char *str)
 
     return e;
 }
-Expr *new_identifier(char *str, size_t length)
+Expr *new_identifier(char *str, size_t length, size_t line_num)
 {
-    Expr *e = new_expr(EX_LOCAL_VAR, str);
+    Expr *e = new_expr(EX_LOCAL_VAR, str, line_num);
     e->copied_str = (char *)calloc(length, sizeof(char));
     strncpy(e->copied_str, str, length);
     e->copied_str[length] = 0;
     e->length = length;
     return e;
 }
-static Expr *new_expr(ExprKind k, char *str)
+static Expr *new_expr(ExprKind k, char *str, size_t line_num)
 {
     Expr *e = (Expr *)calloc(1, sizeof(Expr));
     e->kind = k;
     e->str = str;
+    e->line = line_num;
     return e;
 }
 
@@ -88,10 +89,11 @@ TranslationUnit *new_translation_unit(void)
     return translation_unit;
 }
 
-Stmt *new_stmt(StmtKind k, char *loc)
+Stmt *new_stmt(StmtKind k, char *loc, size_t line_num)
 {
     Stmt *s = (Stmt *)calloc(1, sizeof(Stmt));
     s->kind = k;
+    s->line = line_num;
     s->loc = loc;
     return s;
 }

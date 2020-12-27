@@ -117,18 +117,19 @@ struct Token
     char *str;             // デバッグ用や，識別子用
     char *copied_contents; // 文字列リテラル用．
     size_t length;
+    size_t line; // 行番号
 };
 
 typedef Vector TokenList;
 
 // 整数トークンの作成
-Token *new_integer_token(char *str, int value, size_t length);
+Token *new_integer_token(char *str, int value, size_t length, size_t line_num);
 // 文字列トークンの作成
-Token *new_string_token(char *str, size_t length);
+Token *new_string_token(char *str, size_t length, size_t line_num);
 // 識別子トークンの作成
-Token *new_identifier_token(char *str, size_t length);
+Token *new_identifier_token(char *str, size_t length, size_t line_num);
 // 新しいトークンを作成する
-Token *new_token(TokenKind kind, char *str, size_t length);
+Token *new_token(TokenKind kind, char *str, size_t length, size_t line_num);
 // リスト中のposが指す現在の要素を見る
 Token *current_token(TokenList *tokens);
 // リスト中のposが指す現在のトークンの種類を見る
@@ -222,14 +223,16 @@ struct Expr
     CType *cty;
     // 文字列リテラルで使用.
     int id;
+    // 行番号
+    size_t line;
 };
 
-Expr *new_conditional_expr(Expr *cond, Expr *lhs, Expr *rhs, char *str);
-Expr *new_unop(ExprKind op, Expr *child_expr, char *str);
-Expr *new_binop(ExprKind op, Expr *lhs, Expr *rhs, char *str);
-Expr *new_integer_literal(int value, char *str);
-Expr *new_string_literal(char *contents, char *str);
-Expr *new_identifier(char *str, size_t length);
+Expr *new_conditional_expr(Expr *cond, Expr *lhs, Expr *rhs, char *str, size_t line_num);
+Expr *new_unop(ExprKind op, Expr *child_expr, char *str, size_t line_num);
+Expr *new_binop(ExprKind op, Expr *lhs, Expr *rhs, char *str, size_t line_num);
+Expr *new_integer_literal(int value, char *str, size_t line_num);
+Expr *new_string_literal(char *contents, char *str, size_t line_num);
+Expr *new_identifier(char *str, size_t length, size_t line_num);
 
 /// ast/stmt.c
 
@@ -260,9 +263,11 @@ struct Stmt
     Stmt *els;  // ST_IF等で使用
 
     char *loc; // デバッグで使用
+        // 行番号
+    size_t line;
 };
 
-Stmt *new_stmt(StmtKind k, char *loc);
+Stmt *new_stmt(StmtKind k, char *loc, size_t line_num);
 
 /// ast/function.c
 struct Function
@@ -350,7 +355,7 @@ void codegen(FILE *output_file, TranslationUnit *translation_unit);
 /// debug.c
 
 // エラー箇所を報告する
-void error_at(char *loc, char *fmt, ...);
+void error_at(char *loc, size_t line_num, char *msg);
 
 // ASTを標準エラー出力にダンプする
 void dump_ast(TranslationUnit *translation_unit);

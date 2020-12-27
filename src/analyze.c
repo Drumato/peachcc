@@ -147,7 +147,7 @@ static CType *walk_expr(Expr **e)
     case EX_UNARY_SIZEOF:
     {
         CType *cty = walk_expr(&(*e)->unary_op);
-        *e = new_integer_literal(cty->size, (*e)->str);
+        *e = new_integer_literal(cty->size, (*e)->str, (*e)->line);
         (*e)->cty = new_int();
         return (*e)->cty;
     }
@@ -176,7 +176,6 @@ static CType *walk_expr(Expr **e)
                 return f->return_type;
             }
         }
-        // error_at((*e)->str, "cannot analyze %s's return type", (*e)->copied_str);
         return NULL;
     }
     case EX_UNARY_ADDR:
@@ -217,7 +216,7 @@ static CType *walk_expr(Expr **e)
         // pointer同士の足し算はinvalid
         if (lhs_type->base && rhs_type->base)
         {
-            error_at((*e)->str, "invalid addition between pointer(s)");
+            error_at((*e)->str, (*e)->line, "invalid addition between pointer(s)");
         }
 
         // C言語において `+` はポインタについてオーバーロードされているので，その挙動を実現
@@ -231,7 +230,7 @@ static CType *walk_expr(Expr **e)
 
         // ポインタ演算
         // ptr + integerの形になっているので，右辺をtype_size倍する
-        (*e)->rhs = new_binop(EX_MUL, (*e)->rhs, new_integer_literal((*e)->lhs->cty->base->size, (*e)->rhs->str), (*e)->str);
+        (*e)->rhs = new_binop(EX_MUL, (*e)->rhs, new_integer_literal((*e)->lhs->cty->base->size, (*e)->rhs->str, (*e)->rhs->line), (*e)->str, (*e)->line);
 
         return (*e)->lhs->cty;
     }
@@ -251,18 +250,18 @@ static CType *walk_expr(Expr **e)
         // ptr - integer の場合，+と同様に
         if (lhs_type->base && rhs_type->kind == TY_INT)
         {
-            (*e)->rhs = new_binop(EX_MUL, (*e)->rhs, new_integer_literal(lhs_type->base->size, (*e)->rhs->str), (*e)->str);
+            (*e)->rhs = new_binop(EX_MUL, (*e)->rhs, new_integer_literal(lhs_type->base->size, (*e)->rhs->str, (*e)->rhs->line), (*e)->str, (*e)->line);
             return lhs_type;
         }
 
         // ptr - ptr の場合，2つのポインタの間にどれだけtype_size * byteがあるか，という意味論に
         if (lhs_type->base && rhs_type->base)
         {
-            *e = new_binop(EX_DIV, *e, new_integer_literal(lhs_type->base->size, (*e)->rhs->str), (*e)->str);
+            *e = new_binop(EX_DIV, *e, new_integer_literal(lhs_type->base->size, (*e)->rhs->str, (*e)->rhs->line), (*e)->str, (*e)->line);
             return new_int();
         }
 
-        error_at((*e)->str, "invalid subtraction between these types");
+        error_at((*e)->str, (*e)->line, "invalid subtraction between these types");
         return NULL;
     }
     case EX_MUL:
@@ -293,7 +292,7 @@ static CType *walk_expr(Expr **e)
         CType *lhs_type = walk_expr(&(*e)->lhs);
         if (lhs_type->kind == TY_ARRAY)
         {
-            error_at((*e)->str, "array type is not an lvalue");
+            error_at((*e)->str, (*e)->line, "array type is not an lvalue");
         }
         walk_expr(&(*e)->rhs);
         (*e)->cty = lhs_type;
@@ -312,7 +311,7 @@ static CType *walk_expr(Expr **e)
         return lhs_type;
     }
     default:
-        error_at((*e)->str, "cannot analyze from it");
+        error_at((*e)->str, (*e)->line, "cannot analyze from it");
         return NULL;
     }
 }

@@ -16,7 +16,6 @@ static void gen_expr(Expr *expr);
 static void gen_binop_expr(Expr *expr);
 static void gen_unary_op_expr(Expr *expr);
 static void gen_compare_rax_and_rdi_by(char *mode);
-static void out_newline(char *fmt, ...);
 static void gen_load(CType *cty);
 static void push_reg(char *reg);
 static void pop_reg(char *reg);
@@ -28,35 +27,35 @@ void codegen(FILE *output_file, TranslationUnit *translation_unit)
     output_file_g = output_file;
     global_variables_g = translation_unit->global_variables;
 
-    out_newline(".intel_syntax noprefix");
+    fprintf(output_file_g, ".intel_syntax noprefix\n");
+    fprintf(output_file_g, ".file 1 \"%s\"\n", peachcc_opt_g->input_file);
 
     for (size_t i = 0; i < global_variables_g->keys->len; i++)
     {
         char *glob_var_name = global_variables_g->keys->data[i];
         GlobalVariable *glob_var = global_variables_g->vals->data[i];
 
-        out_newline("\n  .data");
+        fprintf(output_file_g, "\n  .data\n");
         if (!glob_var->is_static)
         {
             // translation-unit外部にも公開する
-            out_newline("  .globl %s", glob_var_name);
+            fprintf(output_file_g, "  .globl %s\n", glob_var_name);
         }
-        out_newline("%s:", glob_var_name);
+        fprintf(output_file_g, "%s:\n", glob_var_name);
         if (glob_var->init_data)
         {
             for (size_t i = 0; i < glob_var->cty->array_len; i++)
             {
-                out_newline("  .byte %d", glob_var->init_data[i]);
+                fprintf(output_file_g, "  .byte %d\n", glob_var->init_data[i]);
             }
-            // out_newline("  .byte 0", glob_var->init_data[i]);
         }
         else
         {
-            out_newline("  .zero %d", glob_var->cty->size);
+            fprintf(output_file_g, "  .zero %zu\n", glob_var->cty->size);
         }
     }
 
-    out_newline("\n  .text");
+    fprintf(output_file_g, "\n  .text\n");
     for (size_t i = 0; i < translation_unit->functions->len; i++)
     {
         Function *f = (Function *)translation_unit->functions->data[i];
@@ -72,9 +71,9 @@ static void gen_fn(Function *fn)
     if (!fn->is_static)
     {
         // translation-unit外部にも公開する
-        out_newline(".globl %s", fn->copied_name);
+        fprintf(output_file_g, ".globl %s\n", fn->copied_name);
     }
-    out_newline("%s:", fn->copied_name);
+    fprintf(output_file_g, "%s:\n", fn->copied_name);
 
     gen_function_prologue(fn->stack_size);
 
@@ -85,11 +84,11 @@ static void gen_fn(Function *fn)
         LocalVariable *lv = (LocalVariable *)map_get(cur_fn_g->local_variables, param_name, strlen(param_name));
         if (lv->cty->size == 1)
         {
-            out_newline("  mov -%zu[rbp], %s", lv->stack_offset, param_reg8_g[i]);
+            fprintf(output_file_g, "  mov -%zu[rbp], %s\n", lv->stack_offset, param_reg8_g[i]);
         }
         else
         {
-            out_newline("  mov -%zu[rbp], %s", lv->stack_offset, param_reg64_g[i]);
+            fprintf(output_file_g, "  mov -%zu[rbp], %s\n", lv->stack_offset, param_reg64_g[i]);
         }
     }
 
@@ -102,6 +101,7 @@ static void gen_fn(Function *fn)
 
 static void gen_stmt(Stmt *stmt)
 {
+    fprintf(output_file_g, ".loc 1 %zu\n", stmt->line);
     switch (stmt->kind)
     {
     case ST_EXPR:
@@ -111,21 +111,21 @@ static void gen_stmt(Stmt *stmt)
     case ST_RETURN:
         gen_expr(stmt->expr);
         pop_reg("rax");
-        out_newline("  jmp .L.return");
+        fprintf(output_file_g, "  jmp .L.return\n");
         break;
     case ST_WHILE:
     {
         int label = label_num_g++;
-        out_newline(".Lbegin%d:", label);
+        fprintf(output_file_g, ".Lbegin%d:\n", label);
         gen_expr(stmt->cond);
         pop_reg("rax");
-        out_newline("  cmp rax, 0");
-        out_newline("  je .Lend%d", label);
+        fprintf(output_file_g, "  cmp rax, 0\n");
+        fprintf(output_file_g, "  je .Lend%d\n", label);
 
         gen_stmt(stmt->then);
-        out_newline("  jmp .Lbegin%d", label);
+        fprintf(output_file_g, "  jmp .Lbegin%d\n", label);
 
-        out_newline(".Lend%d:", label);
+        fprintf(output_file_g, ".Lend%d:\n", label);
         break;
     }
     case ST_FOR:
@@ -138,13 +138,13 @@ static void gen_stmt(Stmt *stmt)
 
         // 条件式をコンパイルしてtrueかチェック
         // そうであればforループを抜ける
-        out_newline(".Lbegin%d:", label);
+        fprintf(output_file_g, ".Lbegin%d:\n", label);
         if (stmt->cond != NULL)
         {
             gen_expr(stmt->cond);
             pop_reg("rax");
-            out_newline("  cmp rax, 0");
-            out_newline("  je .Lend%d", label);
+            fprintf(output_file_g, "  cmp rax, 0\n");
+            fprintf(output_file_g, "  je .Lend%d\n", label);
         }
 
         gen_stmt(stmt->then);
@@ -152,8 +152,8 @@ static void gen_stmt(Stmt *stmt)
         {
             gen_expr(stmt->inc);
         }
-        out_newline("  jmp .Lbegin%d", label);
-        out_newline(".Lend%d:", label);
+        fprintf(output_file_g, "  jmp .Lbegin%d\n", label);
+        fprintf(output_file_g, ".Lend%d:\n", label);
         break;
     }
     case ST_IF:
@@ -164,20 +164,20 @@ static void gen_stmt(Stmt *stmt)
         // falseならばelseブロックに飛ぶ
         gen_expr(stmt->cond);
         pop_reg("rax");
-        out_newline("  cmp rax, 0");
-        out_newline("  je .Lelse%d", label);
+        fprintf(output_file_g, "  cmp rax, 0\n");
+        fprintf(output_file_g, "  je .Lelse%d\n", label);
         gen_stmt(stmt->then);
 
-        out_newline("  jmp .Lend%d", label);
+        fprintf(output_file_g, "  jmp .Lend%d\n", label);
 
         // elseの無いif文の場合，何もしないブロックが出来上がる
-        out_newline(".Lelse%d:", label);
+        fprintf(output_file_g, ".Lelse%d:\n", label);
         if (stmt->els != NULL)
         {
             gen_stmt(stmt->els);
         }
 
-        out_newline(".Lend%d:", label);
+        fprintf(output_file_g, ".Lend%d:\n", label);
         break;
     }
 
@@ -189,21 +189,22 @@ static void gen_stmt(Stmt *stmt)
         }
         break;
     default:
-        error_at(stmt->loc, "cannot codegen from it");
+        error_at(stmt->loc, stmt->line, "cannot codegen from it");
         break;
     }
 }
 
 static void gen_expr(Expr *expr)
 {
-    assert(expr);
+    fprintf(output_file_g, ".loc 1 %zu\n", expr->line);
+
     switch (expr->kind)
     {
     case EX_INTEGER:
-        out_newline("  push %d", expr->value);
+        fprintf(output_file_g, "  push %d\n", expr->value);
         break;
     case EX_STRING:
-        out_newline("  push offset .str%d", expr->id);
+        fprintf(output_file_g, "  push offset .str%d\n", expr->id);
         break;
     case EX_LOCAL_VAR:
         // gen_lvalue でアドレスをプッシュするだけでは変数式にならない
@@ -225,14 +226,14 @@ static void gen_expr(Expr *expr)
             pop_reg(param_reg64_g[i]);
         }
 
-        out_newline("  push rbp");
-        out_newline("  mov rbp, rsp");
-        out_newline("  and rsp, -16");
-        out_newline("  mov rax, 0");
-        out_newline("  call %s", expr->copied_str);
+        fprintf(output_file_g, "  push rbp\n");
+        fprintf(output_file_g, "  mov rbp, rsp\n");
+        fprintf(output_file_g, "  and rsp, -16\n");
+        fprintf(output_file_g, "  mov rax, 0\n");
+        fprintf(output_file_g, "  call %s\n", expr->copied_str);
 
-        out_newline("  mov rsp, rbp");
-        out_newline("  pop rbp");
+        fprintf(output_file_g, "  mov rsp, rbp\n");
+        fprintf(output_file_g, "  pop rbp\n");
         push_reg("rax");
         break;
     }
@@ -268,7 +269,7 @@ static void gen_expr(Expr *expr)
 
         pop_reg("rdi");
         pop_reg("rax");
-        out_newline("  mov [rax], rdi");
+        fprintf(output_file_g, "  mov [rax], rdi\n");
 
         // 代入式なので，値を生成する必要がある
         push_reg("rdi");
@@ -282,18 +283,18 @@ static void gen_expr(Expr *expr)
         // falseならばelseブロックに飛ぶ
         gen_expr(expr->cond);
         pop_reg("rax");
-        out_newline("  cmp rax, 0");
-        out_newline("  je .Lelse%d", label);
+        fprintf(output_file_g, "  cmp rax, 0\n");
+        fprintf(output_file_g, "  je .Lelse%d\n", label);
         gen_expr(expr->lhs);
-        out_newline("  jmp .Lend%d", label);
-        out_newline(".Lelse%d:", label);
+        fprintf(output_file_g, "  jmp .Lend%d\n", label);
+        fprintf(output_file_g, ".Lelse%d:\n", label);
         gen_expr(expr->rhs);
 
-        out_newline(".Lend%d:", label);
+        fprintf(output_file_g, ".Lend%d:\n", label);
         break;
     }
     default:
-        error_at(expr->str, "cannot codegen from it");
+        error_at(expr->str, expr->line, "cannot codegen from it");
         break;
     }
 }
@@ -309,7 +310,7 @@ static void gen_lvalue(Expr *expr)
         LocalVariable *lv = map_get(cur_fn_g->local_variables, expr->copied_str, expr->length);
         if (lv != NULL)
         {
-            out_newline("  lea rax, -%d[rbp]", lv->stack_offset);
+            fprintf(output_file_g, "  lea rax, -%zu[rbp]\n", lv->stack_offset);
             push_reg("rax");
             break;
         }
@@ -317,7 +318,7 @@ static void gen_lvalue(Expr *expr)
         // グローバル変数とする
         // analyze.cの解析により，変数が存在しなければ既にエラーが出ているはずなので，
         // この時点では存在すると決め打ってコード生成して良い
-        out_newline("  push offset %s", expr->copied_str);
+        fprintf(output_file_g, "  push offset %s\n", expr->copied_str);
         break;
     }
     case EX_UNARY_DEREF:
@@ -328,7 +329,7 @@ static void gen_lvalue(Expr *expr)
         break;
     }
     default:
-        error_at(expr->str, "not allowed this expr as a lvalue");
+        error_at(expr->str, expr->line, "not allowed this expr as a lvalue");
     }
 }
 static void gen_binop_expr(Expr *expr)
@@ -345,22 +346,22 @@ static void gen_binop_expr(Expr *expr)
     switch (expr->kind)
     {
     case EX_ADD:
-        out_newline("  add rax, rdi");
+        fprintf(output_file_g, "  add rax, rdi\n");
         break;
     case EX_SUB:
-        out_newline("  sub rax, rdi");
+        fprintf(output_file_g, "  sub rax, rdi\n");
         break;
     case EX_MUL:
-        out_newline("  imul rax, rdi");
+        fprintf(output_file_g, "  imul rax, rdi\n");
         break;
     case EX_DIV:
-        out_newline("  cqo");
-        out_newline("  idiv rdi");
+        fprintf(output_file_g, "  cqo\n");
+        fprintf(output_file_g, "  idiv rdi\n");
         break;
     case EX_MOD:
-        out_newline("  cqo");
-        out_newline("  idiv rdi");
-        out_newline("  mov rax, rdx");
+        fprintf(output_file_g, "  cqo\n");
+        fprintf(output_file_g, "  idiv rdi\n");
+        fprintf(output_file_g, "  mov rax, rdx\n");
         break;
     case EX_EQ:
         gen_compare_rax_and_rdi_by("sete");
@@ -381,13 +382,13 @@ static void gen_binop_expr(Expr *expr)
         gen_compare_rax_and_rdi_by("setle");
         break;
     case EX_LOGOR:
-        out_newline("  or rax, rdi");
+        fprintf(output_file_g, "  or rax, rdi\n");
         break;
     case EX_LOGAND:
-        out_newline("  and rax, rdi");
+        fprintf(output_file_g, "  and rax, rdi\n");
         break;
     default:
-        error_at(expr->str, "It's not a binary operation");
+        error_at(expr->str, expr->line, "It's not a binary operation");
         break;
     }
 
@@ -408,14 +409,14 @@ static void gen_unary_op_expr(Expr *expr)
 
     case EX_UNARY_MINUS:
         pop_reg("rax");
-        out_newline("  neg rax");
+        fprintf(output_file_g, "  neg rax\n");
         break;
     case EX_UNARY_DEREF:
         // 配列オブジェクトかもしれないので，単にデリファレンスせずgen_loadでチェックを挟む
         gen_load(expr->cty);
         break;
     default:
-        error_at(expr->str, "It's not a unary operation");
+        error_at(expr->str, expr->line, "It's not a unary operation");
         break;
     }
     push_reg("rax");
@@ -426,25 +427,25 @@ static void gen_function_prologue(int stack_size)
 {
     int aligned_stack_size = align_to(stack_size, 16);
     push_reg("rbp");
-    out_newline("  mov rbp, rsp");
-    out_newline("  sub rsp, %d", aligned_stack_size);
+    fprintf(output_file_g, "  mov rbp, rsp\n");
+    fprintf(output_file_g, "  sub rsp, %d\n", aligned_stack_size);
 }
 // 関数エピローグの生成
 static void gen_function_epilogue(void)
 {
-    out_newline(".L.return:");
-    out_newline("  mov rsp, rbp");
+    fprintf(output_file_g, ".L.return:\n");
+    fprintf(output_file_g, "  mov rsp, rbp\n");
     pop_reg("rbp");
-    out_newline("  ret");
+    fprintf(output_file_g, "  ret\n");
 }
 
 // raxとrdiを比較し，渡されたモードでalにフラグを立てる．
 // 最終的にraxに符号拡張して返す
 static void gen_compare_rax_and_rdi_by(char *mode)
 {
-    out_newline("  cmp rax, rdi");
-    out_newline("  %s al", mode);
-    out_newline("  movzx rax, al");
+    fprintf(output_file_g, "  cmp rax, rdi\n");
+    fprintf(output_file_g, "  %s al\n", mode);
+    fprintf(output_file_g, "  movzx rax, al\n");
 }
 
 // raxに格納されたアドレスの中身を取り出す
@@ -460,31 +461,22 @@ static void gen_load(CType *cty)
     pop_reg("rax");
     if (cty->size == 1)
     {
-        out_newline("  movsx rax, BYTE PTR [rax]");
+        fprintf(output_file_g, "  movsx rax, BYTE PTR [rax]\n");
     }
     else
     {
-        out_newline("  mov rax, [rax]");
+        fprintf(output_file_g, "  mov rax, [rax]\n");
     }
     push_reg("rax");
-}
-// output_file_gに文字列を改行付きで書き込む
-static void out_newline(char *fmt, ...)
-{
-    va_list ap;
-    va_start(ap, fmt);
-
-    vfprintf(output_file_g, fmt, ap);
-    fprintf(output_file_g, "\n");
 }
 
 static void push_reg(char *reg)
 {
-    out_newline("  push %s", reg);
+    fprintf(output_file_g, "  push %s\n", reg);
 }
 static void pop_reg(char *reg)
 {
-    out_newline("  pop %s", reg);
+    fprintf(output_file_g, "  pop %s\n", reg);
 }
 
 // Round up `n` to the nearest multiple of `align`. For instance,
