@@ -60,4 +60,5 @@ GPATH
 *core*
 *.s
 peachcc
+peachcc_gen0
 .vscode/

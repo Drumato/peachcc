@@ -310,6 +310,17 @@ static void dump_expr(Expr *e)
         dump_expr(e->unary_op);
         fprintf(stderr, ")");
         break;
+    case EX_CONDITION:
+    {
+        fprintf(stderr, "ConditionalExpr(");
+        dump_expr(e->cond);
+        fprintf(stderr, ", ");
+        dump_expr(e->lhs);
+        fprintf(stderr, ", ");
+        dump_expr(e->rhs);
+        fprintf(stderr, ")");
+        break;
+    }
     case EX_INTEGER:
         fprintf(stderr, "%d", e->value);
         break;

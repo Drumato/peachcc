@@ -273,6 +273,25 @@ static void gen_expr(Expr *expr)
         // 代入式なので，値を生成する必要がある
         push_reg("rdi");
         break;
+    case EX_CONDITION:
+    {
+        // if文のようにcmpをかけて，どちらかのブロックがスタックに値をpushしてくれれば三項演算子になる
+        int label = label_num_g++;
+
+        // 条件式をコンパイルし，trueかどうかチェック
+        // falseならばelseブロックに飛ぶ
+        gen_expr(expr->cond);
+        pop_reg("rax");
+        out_newline("  cmp rax, 0");
+        out_newline("  je .Lelse%d", label);
+        gen_expr(expr->lhs);
+        out_newline("  jmp .Lend%d", label);
+        out_newline(".Lelse%d:", label);
+        gen_expr(expr->rhs);
+
+        out_newline(".Lend%d:", label);
+        break;
+    }
     default:
         error_at(expr->str, "cannot codegen from it");
         break;

@@ -299,6 +299,18 @@ static CType *walk_expr(Expr **e)
         (*e)->cty = lhs_type;
         return lhs_type;
     }
+    case EX_CONDITION:
+    {
+        assert((*e)->lhs);
+        assert((*e)->rhs);
+        assert((*e)->cond);
+
+        CType *lhs_type = walk_expr(&(*e)->lhs);
+        walk_expr(&(*e)->rhs);
+        walk_expr(&(*e)->cond);
+
+        return lhs_type;
+    }
     default:
         error_at((*e)->str, "cannot analyze from it");
         return NULL;

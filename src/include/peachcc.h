@@ -84,6 +84,8 @@ enum TokenKind
     TK_LOGOR,     // `||`
 
     TK_ASSIGN,          // `=`
+    TK_COLON,           // `:`
+    TK_QUESTION,        // `?`
     TK_COMMA,           // `,`
     TK_SEMICOLON,       // `;`
     TK_INTEGER_LITERAL, // 整数
@@ -188,6 +190,7 @@ typedef enum
     EX_CALL,        // 呼び出し式
     EX_LOCAL_VAR,   // 識別子
     EX_ASSIGN,      // 代入式
+    EX_CONDITION,   // 三項演算子
     // sizeof 演算子
     // analyze() によって変換されるので注意
     EX_UNARY_SIZEOF,
@@ -206,6 +209,7 @@ struct Expr
     ExprKind kind; // 式の型
     Expr *lhs;     // 左辺(2つのオペランドを取るノードで使用)
     Expr *rhs;     // 右辺(2つのオペランドを取るノードで使用)
+    Expr *cond;    // 三項演算子で使用
 
     // 呼び出し式で使用
     // Expr *のリスト
@@ -220,6 +224,7 @@ struct Expr
     int id;
 };
 
+Expr *new_conditional_expr(Expr *cond, Expr *lhs, Expr *rhs, char *str);
 Expr *new_unop(ExprKind op, Expr *child_expr, char *str);
 Expr *new_binop(ExprKind op, Expr *lhs, Expr *rhs, char *str);
 Expr *new_integer_literal(int value, char *str);
@@ -319,43 +324,8 @@ LocalVariable *new_local_var(char *str, size_t length, CType *cty, size_t stack_
 /// lexer.c
 void tokenize(TokenList *tokens, char *p);
 
-/// parser/common.c
-
-// 次のトークンが期待している種類のときには，
-// トークンを1つ読み進めて真を返す．
-// 読み進められなかった時は偽を返す．
-bool try_eat(TokenList *tokens, TokenKind k);
-
-// 次のトークンが期待している記号のときには，トークンを1つ読み進める．
-// それ以外の場合にはエラーを報告する．
-void expect(TokenList *tokens, TokenKind k);
-
-// 次のトークンが整数の場合，トークンを1つ読み進めてその数値を返す．
-// それ以外の場合にはエラーを報告する．
-int expect_integer_literal(TokenList *tokens);
-char *expect_string_literal(TokenList *tokens);
-
-// 現在見ているトークンが渡されたkと同じ種類かチェック
-bool eatable(TokenList *tokens, TokenKind k);
-
-bool at_eof(TokenList *tokens);
-bool is_typename(TokenList *tokens);
-bool start_storage_class(TokenList *tokens);
-
-Token *try_eat_identifier(TokenList *tokens);
-
-void insert_localvar_to_fn_env(Token *id, CType *cty);
-Token *expect_identifier(TokenList *tokens);
-
 /// parser/toplevel.c
 TranslationUnit *parse(TokenList *tokens);
-
-/// parser/statement.c
-
-Vector *compound_stmt(TokenList *tokens);
-Stmt *statement(TokenList *tokens);
-
-/// parser/declaration.c
 
 struct Decl
 {
@@ -369,16 +339,6 @@ struct DeclarationSpecifier
     CType *cty;
 };
 typedef struct DeclarationSpecifier DeclarationSpecifier;
-
-Decl *declaration(TokenList *tokens);
-DeclarationSpecifier *declaration_specifiers(TokenList *tokens);
-Token *declarator(CType **cty, TokenList *tokens);
-Vector *parameter_list(TokenList *tokens);
-DeclarationSpecifier *decl_spec(TokenList *tokens, Token **id);
-
-/// parser/expression.c
-
-Expr *expression(TokenList *tokens);
 
 /// analyze.c
 

@@ -2,6 +2,15 @@
 
 static Expr *new_expr(ExprKind k, char *str);
 
+Expr *new_conditional_expr(Expr *cond, Expr *lhs, Expr *rhs, char *str)
+{
+    Expr *e = new_expr(EX_CONDITION, str);
+    e->cond = cond;
+    e->lhs = lhs;
+    e->rhs = rhs;
+    return e;
+}
+
 Expr *new_binop(ExprKind op, Expr *lhs, Expr *rhs, char *str)
 {
     Expr *e = new_expr(op, str);
@@ -60,4 +69,29 @@ static Expr *new_expr(ExprKind k, char *str)
     e->kind = k;
     e->str = str;
     return e;
+}
+
+Function *new_function(char *name, size_t length)
+{
+    Function *f = (Function *)calloc(1, sizeof(Function));
+    f->copied_name = calloc(length, sizeof(char));
+    strncpy(f->copied_name, name, length);
+    f->copied_name[length] = 0;
+    return f;
+}
+
+TranslationUnit *new_translation_unit(void)
+{
+    TranslationUnit *translation_unit = (TranslationUnit *)calloc(1, sizeof(TranslationUnit));
+    translation_unit->functions = new_vec();
+    translation_unit->global_variables = new_map();
+    return translation_unit;
+}
+
+Stmt *new_stmt(StmtKind k, char *loc)
+{
+    Stmt *s = (Stmt *)calloc(1, sizeof(Stmt));
+    s->kind = k;
+    s->loc = loc;
+    return s;
 }

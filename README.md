@@ -1,11 +1,12 @@
 # peachcc
 
-A C Compiler that generate an x64 assembly file written by C.  
+A tiny C Compiler that generate an x64 assembly file written by C.  
 
 ## How to Run
 
 ```shell
-$ ./test.sh # Run all test
+$ make test # check all tests behavior
+$ make self-host # (WIP)
 ```
 
 ## References
