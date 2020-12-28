@@ -60,7 +60,7 @@ void dump_ast(TranslationUnit *translation_unit)
     for (size_t i = 0; i < translation_unit->global_variables->keys->len; i++)
     {
         char *glob_var_name = translation_unit->global_variables->keys->data[i];
-        GlobalVariable *glob_var = translation_unit->global_variables->vals->data[i];
+        Variable *glob_var = translation_unit->global_variables->vals->data[i];
 
         fprintf(stderr, "globals[%zu] = %s: ", i, glob_var_name);
         dump_ctype(glob_var->cty);

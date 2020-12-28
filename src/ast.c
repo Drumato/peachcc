@@ -43,7 +43,7 @@ Expr *new_string_literal(char *contents, char *str, size_t line_num)
     e->id = str_id_g;
 
     // グローバル変数としても登録する
-    GlobalVariable *glob_var = (GlobalVariable *)calloc(1, sizeof(GlobalVariable));
+    Variable *glob_var = (Variable *)calloc(1, sizeof(Variable));
 
     // \0が挿入されるので，+1
     glob_var->cty = new_array(new_char(), strlen(contents) + 1);
@@ -78,6 +78,7 @@ Function *new_function(char *name, size_t length)
     f->copied_name = calloc(length, sizeof(char));
     strncpy(f->copied_name, name, length);
     f->copied_name[length] = 0;
+    f->scope = new_scope(NULL);
     return f;
 }
 

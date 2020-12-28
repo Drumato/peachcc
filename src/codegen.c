@@ -25,15 +25,14 @@ void codegen(FILE *output_file, TranslationUnit *translation_unit)
 {
     label_num_g = 0;
     output_file_g = output_file;
-    global_variables_g = translation_unit->global_variables;
 
     fprintf(output_file_g, ".intel_syntax noprefix\n");
     fprintf(output_file_g, ".file 1 \"%s\"\n", peachcc_opt_g->input_file);
 
-    for (size_t i = 0; i < global_variables_g->keys->len; i++)
+    for (size_t i = 0; i < translation_unit->global_variables->keys->len; i++)
     {
-        char *glob_var_name = global_variables_g->keys->data[i];
-        GlobalVariable *glob_var = global_variables_g->vals->data[i];
+        char *glob_var_name = translation_unit->global_variables->keys->data[i];
+        Variable *glob_var = translation_unit->global_variables->vals->data[i];
 
         fprintf(output_file_g, "\n  .data\n");
         if (!glob_var->is_static)
@@ -80,15 +79,14 @@ static void gen_fn(Function *fn)
     // 引数がある分，スタックにstoreするコードを生成する
     for (size_t i = 0; i < fn->params->len; i++)
     {
-        char *param_name = fn->params->data[i];
-        LocalVariable *lv = (LocalVariable *)map_get(cur_fn_g->local_variables, param_name, strlen(param_name));
-        if (lv->cty->size == 1)
+        Variable *param = fn->params->data[i];
+        if (param->cty->size == 1)
         {
-            fprintf(output_file_g, "  mov -%zu[rbp], %s\n", lv->stack_offset, param_reg8_g[i]);
+            fprintf(output_file_g, "  mov -%zu[rbp], %s\n", param->stack_offset, param_reg8_g[i]);
         }
         else
         {
-            fprintf(output_file_g, "  mov -%zu[rbp], %s\n", lv->stack_offset, param_reg64_g[i]);
+            fprintf(output_file_g, "  mov -%zu[rbp], %s\n", param->stack_offset, param_reg64_g[i]);
         }
     }
 
@@ -305,26 +303,21 @@ static void gen_lvalue(Expr *expr)
     {
     case EX_LOCAL_VAR:
     {
-
-        // 変数のスタックオフセットを計算
-        LocalVariable *lv = map_get(cur_fn_g->local_variables, expr->copied_str, expr->length);
-        if (lv != NULL)
+        if (expr->var->is_global)
         {
-            fprintf(output_file_g, "  lea rax, -%zu[rbp]\n", lv->stack_offset);
-            push_reg("rax");
+            fprintf(output_file_g, "  push offset %s\n", expr->copied_str);
             break;
         }
 
-        // グローバル変数とする
-        // analyze.cの解析により，変数が存在しなければ既にエラーが出ているはずなので，
-        // この時点では存在すると決め打ってコード生成して良い
-        fprintf(output_file_g, "  push offset %s\n", expr->copied_str);
+        // スタックオフセットを積む
+        fprintf(output_file_g, "  lea rax, -%zu[rbp]\n", expr->var->stack_offset);
+        push_reg("rax");
         break;
     }
     case EX_UNARY_DEREF:
     {
         // 変数のアドレスをスタックに積むだけでなく
-        // そのアドレスに格納されたアドレスを得る操作をして良い
+        // そのアドレスに格納されたアドレスを得る操作をして良いので，gen_exprを呼ぶ
         gen_expr(expr->unary_op);
         break;
     }

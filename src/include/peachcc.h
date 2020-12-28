@@ -200,6 +200,7 @@ typedef enum
 typedef struct Expr Expr;
 
 // 式を表すASTノードの型
+typedef struct Variable Variable;
 struct Expr
 {
     char *str; // デバッグで使用
@@ -225,6 +226,9 @@ struct Expr
     int id;
     // 行番号
     size_t line;
+    // 変数のデータの格納
+    // 意味解析時に格納しておくことで，コード生成時の計算を省略する
+    Variable *var;
 };
 
 Expr *new_conditional_expr(Expr *cond, Expr *lhs, Expr *rhs, char *str, size_t line_num);
@@ -249,6 +253,7 @@ enum StmtKind
 typedef enum StmtKind StmtKind;
 typedef struct Stmt Stmt;
 
+typedef struct Scope Scope;
 /// 文を表す
 struct Stmt
 {
@@ -262,9 +267,9 @@ struct Stmt
     Stmt *then; // ST_IF, ST_WHILE, ST_FOR等で使用
     Stmt *els;  // ST_IF等で使用
 
-    char *loc; // デバッグで使用
-        // 行番号
-    size_t line;
+    char *loc;    // デバッグで使用
+    size_t line;  // 行番号
+    Scope *scope; // 変数スコープ
 };
 
 Stmt *new_stmt(StmtKind k, char *loc, size_t line_num);
@@ -275,8 +280,6 @@ struct Function
     // 関数名
     // コピーされているので，そのまま出力可能
     char *copied_name;
-    // ローカル変数の辞書
-    Map *local_variables;
     Vector *stmts;
     // 関数が持つフレームサイズ
     size_t stack_size;
@@ -287,6 +290,7 @@ struct Function
     // 返り値の型
     CType *return_type;
     bool is_static;
+    Scope *scope;
 };
 typedef struct Function Function;
 
@@ -305,26 +309,31 @@ typedef struct TranslationUnit TranslationUnit;
 TranslationUnit *new_translation_unit(void);
 
 /// variable.c
-struct LocalVariable
+struct Variable
 {
     char *str;
     size_t length;
     CType *cty;
-    size_t stack_offset;
-    // コンパイラ内で使用していないので，サポートしない
-    // bool is_static;
-};
-typedef struct LocalVariable LocalVariable;
+    bool is_global;
 
-struct GlobalVariable
-{
-    CType *cty;
+    //  ローカル変数でのみ使用
+    size_t stack_offset;
+    // グローバル変数でのみ使用
     char *init_data;
+    // グローバル変数でのみ使用
     bool is_static;
 };
-typedef struct GlobalVariable GlobalVariable;
+Variable *new_variable(char *str, size_t length, CType *cty, bool is_global);
 
-LocalVariable *new_local_var(char *str, size_t length, CType *cty, size_t stack_offset);
+// 変数のスコープを管理する構造体
+struct Scope
+{
+    Scope *inner;   // より内側のスコープ
+    Scope *outer;   // より外側のスコープ
+    Map *variables; // 変数定義
+};
+Scope *new_scope(Scope **parent);
+Variable *find_var(Scope *sc, char *key, size_t length);
 
 /// lexer.c
 void tokenize(TokenList *tokens, char *p);
@@ -368,8 +377,6 @@ char *c_program_g;
 // パーサ内部でしか用いられず，最終的にfreeする．
 Token *cur_g;
 // パーサで用いる
-Map *local_variables_in_cur_fn_g;
-Map *global_variables_g;
 int str_id_g;
 // パース時にスタックオフセットを決定するために使用
 // 関数をパースする毎に，0に初期化する必要がある
@@ -378,3 +385,5 @@ size_t total_stack_size_in_fn_g;
 // コンパイルオプションを扱う構造体．
 // main関数でコマンドラインオプションのパースが実行され，適切な値が格納されている．
 CompileOption *peachcc_opt_g;
+
+Map *global_variables_g;

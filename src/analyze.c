@@ -3,6 +3,7 @@
 // 呼び出し式のanalyzeで使用
 // 関数の返り値の型を探す
 static Vector *functions_g;
+static Scope *cur_scope_g;
 
 static void walk_fn(Function *f);
 
@@ -23,21 +24,21 @@ void analyze(TranslationUnit *translation_unit)
 static void walk_fn(Function *f)
 {
     assert(f);
-    assert(f->local_variables);
+    assert(f->scope);
     assert(f->params);
     assert(f->copied_name);
     assert(f->return_type);
     assert(f->stmts);
 
-    local_variables_in_cur_fn_g = f->local_variables;
+    cur_scope_g = f->scope;
 
     // ローカル変数のスタック割当
     // パース後の状態では，すべての変数のオフセットが0の状態で格納されている
-    LocalVariable *lv;
+    Variable *lv;
     size_t total_stack_size = f->stack_size;
-    for (size_t i = 0; i < local_variables_in_cur_fn_g->keys->len; i++)
+    for (size_t i = 0; i < f->scope->variables->keys->len; i++)
     {
-        lv = local_variables_in_cur_fn_g->vals->data[i];
+        lv = f->scope->variables->vals->data[i];
         assert(lv);
         assert(lv->cty);
         assert(lv->str);
@@ -101,11 +102,13 @@ static void walk_stmt(Stmt *s)
     case ST_COMPOUND:
     {
         assert(s->body);
+        cur_scope_g = s->scope;
         for (size_t i = 0; i < s->body->len; i++)
         {
             Stmt *child = (Stmt *)s->body->data[i];
             walk_stmt(child);
         }
+        cur_scope_g = s->scope->outer;
     }
     }
 }
@@ -124,25 +127,28 @@ static CType *walk_expr(Expr **e)
         // グローバルマップに登録されているものを使う
         char *buf = (char *)calloc(20, sizeof(char));
         sprintf(buf, ".str%d", (*e)->id);
-        GlobalVariable *glob_var = map_get(global_variables_g, buf, strlen(buf));
+        Variable *glob_var = map_get(global_variables_g, buf, strlen(buf));
         assert(glob_var);
         (*e)->cty = glob_var->cty;
         return glob_var->cty;
     }
     case EX_LOCAL_VAR:
     {
-        LocalVariable *lv = map_get(local_variables_in_cur_fn_g, (*e)->str, (*e)->length);
-        if (lv != NULL)
+        Variable *v = find_var(cur_scope_g, (*e)->str, (*e)->length);
+        if (v != NULL)
         {
-            (*e)->cty = lv->cty;
-            return lv->cty;
+            (*e)->cty = v->cty;
+            (*e)->var = v;
+            return v->cty;
         }
 
         // グローバル変数のマップからも探す
-        GlobalVariable *glob_var = map_get(global_variables_g, (*e)->str, (*e)->length);
-        assert(glob_var);
-        (*e)->cty = glob_var->cty;
-        return glob_var->cty;
+        v = map_get(global_variables_g, (*e)->str, (*e)->length);
+        assert(v);
+
+        (*e)->cty = v->cty;
+        (*e)->var = v;
+        return v->cty;
     }
     case EX_UNARY_SIZEOF:
     {

@@ -25,6 +25,7 @@ static Token *init_declarator(CType **cty, TokenList *tokens);
 static Token *direct_declarator(CType **cty, TokenList *tokens);
 static void type_suffix(CType **cty, TokenList *tokens);
 static void storage_class_specifier(TokenList *tokens, DeclarationSpecifier **decl);
+static Function *function(TokenList *tokens);
 
 // expr parsers;
 static Expr *conditional(TokenList *tokens);
@@ -42,6 +43,8 @@ static Expr *primary(TokenList *tokens);
 static Expr *paren_expr(TokenList *tokens);
 static Expr *ident_expr(TokenList *tokens, Token *ident_loc);
 static Expr *call_expr(TokenList *tokens, Expr *id);
+
+static Scope *cur_scope_g;
 
 // 次のトークンが期待している種類のときには，
 // トークンを1つ読み進めて真を返す．
@@ -126,16 +129,17 @@ Token *expect_identifier(TokenList *tokens)
 }
 
 // 識別子をローカル変数のマップに登録する
-void insert_localvar_to_fn_env(Token *id, CType *cty)
+Variable *insert_localvar_to_fn_env(Scope **sc, Token *id, CType *cty)
 {
-    LocalVariable *lv;
-    if ((lv = (LocalVariable *)map_get(local_variables_in_cur_fn_g, id->str, id->length)) == NULL)
+    Variable *v;
+    if ((v = (Variable *)map_get((*sc)->variables, id->str, id->length)) == NULL)
     {
         total_stack_size_in_fn_g = total_stack_size_in_fn_g + cty->size;
-        lv = new_local_var(id->str, id->length, cty, 0);
-        lv->cty = cty;
-        map_put(local_variables_in_cur_fn_g, id->str, lv);
+        v = new_variable(id->str, id->length, cty, false);
+        map_put((*sc)->variables, id->str, v);
     }
+
+    return v;
 }
 
 bool is_typename(TokenList *tokens)
@@ -177,7 +181,6 @@ DeclarationSpecifier *decl_spec(TokenList *tokens, Token **id)
 }
 
 // '(' parameter-declaration (',' parameter-declaration)? ')'
-// 今の所単なる識別子名のリスト
 Vector *parameter_list(TokenList *tokens)
 {
     Vector *params = new_vec();
@@ -186,11 +189,8 @@ Vector *parameter_list(TokenList *tokens)
     while (!try_eat(tokens, TK_RPAREN))
     {
         Decl *param = parameter_declaration(tokens);
-        insert_localvar_to_fn_env(param->id, param->cty);
-        char *copied_name = (char *)calloc(param->id->length, sizeof(char));
-        strncpy(copied_name, param->id->str, param->id->length);
-        copied_name[param->id->length] = 0;
-        vec_push(params, copied_name);
+        Variable *param_v = insert_localvar_to_fn_env(&cur_scope_g, param->id, param->cty);
+        vec_push(params, param_v);
 
         if (try_eat(tokens, TK_RPAREN))
         {
@@ -662,10 +662,15 @@ Stmt *statement(TokenList *tokens)
         return return_stmt(tokens);
     case TK_LBRACE:
     {
+        Scope *scope = new_scope(&cur_scope_g);
+        cur_scope_g = scope;
         Token *loc = current_token(tokens);
 
         Stmt *s = new_stmt(ST_COMPOUND, loc->str, loc->line);
         s->body = compound_stmt(tokens);
+        s->scope = cur_scope_g;
+
+        cur_scope_g = scope->outer;
         return s;
     }
     case TK_IF:
@@ -792,7 +797,7 @@ static Vector *block_item_list(TokenList *tokens)
         if (is_typename(tokens))
         {
             Decl *decl = declaration(tokens);
-            insert_localvar_to_fn_env(decl->id, decl->cty);
+            insert_localvar_to_fn_env(&cur_scope_g, decl->id, decl->cty);
             continue;
         }
 
@@ -800,8 +805,6 @@ static Vector *block_item_list(TokenList *tokens)
     }
     return body;
 }
-
-static Function *function(TokenList *tokens);
 // expr
 TranslationUnit *parse(TokenList *tokens)
 {
@@ -831,16 +834,16 @@ TranslationUnit *parse(TokenList *tokens)
             strncpy(copied_name, global_decl->id->str, global_decl->id->length);
             copied_name[global_decl->id->length] = 0;
 
-            GlobalVariable *glob_var = (GlobalVariable *)calloc(1, sizeof(GlobalVariable));
+            Variable *glob_var = new_variable(global_decl->id->str, global_decl->id->length, global_decl->cty, true);
             glob_var->is_static = declspec->is_static;
-            glob_var->cty = global_decl->cty;
-            map_put(translation_unit->global_variables, copied_name, glob_var);
+            map_put(global_variables_g, copied_name, glob_var);
             continue;
         }
 
         vec_push(fns, function(tokens));
     }
     translation_unit->functions = fns;
+    translation_unit->global_variables = global_variables_g;
     return translation_unit;
 }
 
@@ -848,6 +851,7 @@ TranslationUnit *parse(TokenList *tokens)
 static Function *function(TokenList *tokens)
 {
     total_stack_size_in_fn_g = 0;
+    cur_scope_g = new_scope(NULL);
 
     DeclarationSpecifier *decl = declaration_specifiers(tokens);
 
@@ -856,9 +860,7 @@ static Function *function(TokenList *tokens)
     size_t func_name_length = fn_id->length;
 
     Function *f = new_function(func_name, func_name_length);
-    Map *local_variables = new_map();
-    local_variables_in_cur_fn_g = local_variables;
-    f->local_variables = local_variables;
+    f->scope = cur_scope_g;
     f->return_type = decl->cty;
     f->is_static = decl->is_static;
 

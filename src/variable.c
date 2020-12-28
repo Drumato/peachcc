@@ -1,11 +1,39 @@
 #include "peachcc.h"
 
-LocalVariable *new_local_var(char *str, size_t length, CType *cty, size_t stack_offset)
+Variable *new_variable(char *str, size_t length, CType *cty, bool is_global)
 {
-    LocalVariable *lv = (LocalVariable *)calloc(1, sizeof(LocalVariable));
-    lv->str = str;
-    lv->length = length;
-    lv->stack_offset = stack_offset;
-    lv->cty = cty;
-    return lv;
+    Variable *v = (Variable *)calloc(1, sizeof(Variable));
+    v->str = str;
+    v->is_global = is_global;
+    v->length = length;
+    v->cty = cty;
+    return v;
+}
+
+Scope *new_scope(Scope **parent)
+{
+    Scope *scope = (Scope *)calloc(1, sizeof(Scope));
+    scope->variables = new_map();
+    if (parent != NULL)
+    {
+        (*parent)->inner = scope;
+        scope->outer = *parent;
+    }
+
+    return scope;
+}
+
+// 内側のスコープから外側に向かって探索する
+Variable *find_var(Scope *sc, char *key, size_t length)
+{
+    for (Scope *s = sc; s != NULL; s = s->outer)
+    {
+        Variable *v = map_get(s->variables, key, length);
+        if (v != NULL)
+        {
+            return v;
+        }
+    }
+
+    return NULL;
 }
