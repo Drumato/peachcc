@@ -48,6 +48,18 @@ void dump_ctype(CType *cty)
         dump_ctype(cty->base);
         fprintf(stderr, "[%d]", cty->array_len);
         break;
+    case TY_STRUCT:
+    {
+        fprintf(stderr, "struct { ");
+        for (size_t i = 0; i < cty->members->keys->len; i++)
+        {
+            Member *m = cty->members->vals->data[i];
+            fprintf(stderr, "members[%zu]: ", i);
+            dump_ctype(m->cty);
+            fprintf(stderr, ", ");
+        }
+        fprintf(stderr, "}");
+    }
     }
 }
 
@@ -183,6 +195,11 @@ static void dump_expr(Expr *e)
         fprintf(stderr, "SizeofExpr(");
         dump_expr(e->unary_op);
         fprintf(stderr, ")");
+        break;
+    case EX_MEMBER_ACCESS:
+        fprintf(stderr, "MemberAccessExpr(");
+        dump_expr(e->unary_op);
+        fprintf(stderr, ", %s)", e->copied_member);
         break;
     case EX_ASSIGN:
         fprintf(stderr, "AssignExpr(");

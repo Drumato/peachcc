@@ -16,6 +16,7 @@ static DeclarationSpecifier *declaration_specifiers(TokenList *tokens);
 static Token *declarator(CType **cty, TokenList *tokens);
 static Vector *parameter_list(TokenList *tokens);
 static DeclarationSpecifier *decl_spec(TokenList *tokens, Token **id);
+static CType *struct_decl(TokenList *tokens);
 
 static CType *type_specifier(TokenList *tokens);
 static void pointer(CType **cty, TokenList *tokens);
@@ -90,7 +91,6 @@ char *expect_string_literal(TokenList *tokens)
 {
     if (cur_g->kind != TK_STRING_LITERAL)
     {
-        fprintf(stderr, "%d\n", cur_g->kind);
         error_at(cur_g->str, cur_g->line, "expected string literal");
     }
     char *str = cur_g->copied_contents;
@@ -145,7 +145,7 @@ Variable *insert_localvar_to_fn_env(Scope **sc, Token *id, CType *cty)
 bool is_typename(TokenList *tokens)
 {
     TokenKind cur = current_tk(tokens);
-    return cur == TK_INT || cur == TK_CHAR;
+    return cur == TK_INT || cur == TK_CHAR || cur == TK_STRUCT;
 }
 
 // "static"
@@ -312,7 +312,35 @@ static void type_suffix(CType **cty, TokenList *tokens)
     *cty = new_array(*cty, array_len);
 }
 
-// "int" | "char"
+// "struct" identifier? '{' declaration '}'
+static CType *struct_decl(TokenList *tokens)
+{
+    expect(tokens, TK_STRUCT);
+
+    // とりあえずタグ名は無視する
+    expect(tokens, TK_LBRACE);
+    Map *members = new_map();
+
+    size_t member_offset = 0;
+    while (!try_eat(tokens, TK_RBRACE))
+    {
+        Decl *decl = declaration(tokens);
+
+        Member *m = calloc(1, sizeof(Member));
+        char *member_name = calloc(decl->id->length, sizeof(char));
+        strncpy(member_name, decl->id->str, decl->id->length);
+        member_name[decl->id->length] = 0;
+
+        m->cty = decl->cty;
+        m->offset = member_offset;
+        member_offset = member_offset + m->cty->size;
+        map_put(members, member_name, m);
+    }
+
+    return new_struct(members);
+}
+
+// "int" | "char" | "struct" identifier?
 static CType *type_specifier(TokenList *tokens)
 {
     Token *cur = current_token(tokens);
@@ -327,6 +355,10 @@ static CType *type_specifier(TokenList *tokens)
     {
         expect(tokens, TK_CHAR);
         return new_char();
+    }
+    case TK_STRUCT:
+    {
+        return struct_decl(tokens);
     }
     default:
         error_at(cur->str, cur->line, "not allowed it in type-specifier");
@@ -563,7 +595,7 @@ static Expr *prefix_unary(TokenList *tokens)
     return e;
 }
 
-// primary (('[' expr ']')* | '++' )?
+// primary (('[' expr ']')* | '++' | '--' | '.' ident)?
 static Expr *postfix_unary(TokenList *tokens)
 {
     Token *loc = current_token(tokens);
@@ -575,19 +607,31 @@ static Expr *postfix_unary(TokenList *tokens)
         e = new_binop(EX_SUB, new_binop(EX_ASSIGN, e, new_binop(EX_ADD, e, new_integer_literal(1, loc->str, loc->line), loc->str, loc->line), loc->str, loc->line), new_integer_literal(1, loc->str, loc->line), loc->str, loc->line);
         return e;
     }
-    if (try_eat(tokens, TK_DECREMENT))
+    else if (try_eat(tokens, TK_DECREMENT))
     {
         // i++ は (i = i - 1) + 1という式として見れる
         e = new_binop(EX_ADD, new_binop(EX_ASSIGN, e, new_binop(EX_SUB, e, new_integer_literal(1, loc->str, loc->line), loc->str, loc->line), loc->str, loc->line), new_integer_literal(1, loc->str, loc->line), loc->str, loc->line);
         return e;
     }
 
-    while (try_eat(tokens, TK_LBRACKET))
+    for (;;)
     {
-        Expr *idx = expression(tokens);
-        expect(tokens, TK_RBRACKET);
-        // x[y] は単に *(x + y) として変換してしまう．
-        e = new_unop(EX_UNARY_DEREF, new_binop(EX_ADD, e, idx, loc->str, loc->line), loc->str, loc->line);
+        if (try_eat(tokens, TK_LBRACKET))
+        {
+            Expr *idx = expression(tokens);
+            expect(tokens, TK_RBRACKET);
+            // x[y] は単に *(x + y) として変換してしまう．
+            e = new_unop(EX_UNARY_DEREF, new_binop(EX_ADD, e, idx, loc->str, loc->line), loc->str, loc->line);
+        }
+        else if (try_eat(tokens, TK_DOT))
+        {
+            Token *member_name = expect_identifier(tokens);
+            e = new_member_access(e, member_name, loc->str, loc->line);
+        }
+        else
+        {
+            break;
+        }
     }
 
     return e;

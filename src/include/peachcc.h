@@ -74,6 +74,7 @@ enum TokenKind
     TK_RBRACE,    // `}`
     TK_LE,        // `<`
     TK_GE,        // `>`
+    TK_DOT,       // `.`
     TK_LEEQ,      // `<=`
     TK_GEEQ,      // `>=`
     TK_EQ,        // `==`
@@ -102,6 +103,7 @@ enum TokenKind
     TK_SIZEOF,          // "sizeof"
     TK_STATIC,          // "static"
     TK_EXTERN,          // "extern"
+    TK_STRUCT,          // "struct"
     TK_EOF,             // 入力の終わり
 };
 typedef enum TokenKind TokenKind;
@@ -146,9 +148,18 @@ enum CTypeKind
     TY_CHAR,
     TY_PTR,
     TY_ARRAY,
+    TY_STRUCT,
 };
 typedef enum CTypeKind CTypeKind;
 typedef struct CType CType;
+
+struct Member
+{
+    CType *cty;
+    size_t offset;
+};
+typedef struct Member Member;
+
 struct CType
 {
     CTypeKind kind;
@@ -161,39 +172,44 @@ struct CType
     // 配列の長さ
     // コンパイル時に決定できるはず
     int array_len;
+
+    // 構造体型に定義されたメンバ一覧
+    Map *members;
 };
 
 CType *new_int(void);
 CType *new_char(void);
 CType *new_ptr(CType *base);
 CType *new_array(CType *base, int array_len);
+CType *new_struct(Map *members);
 
 /// ast/expr.c
 typedef enum
 {
-    EX_ADD,         // 加算
-    EX_SUB,         // 減算
-    EX_MUL,         // 乗算
-    EX_DIV,         // 除算
-    EX_MOD,         // 剰余算
-    EX_LE,          // `lhs < rhs`
-    EX_GE,          // `lhs > rhs`
-    EX_LEEQ,        // `lhs <= rhs`
-    EX_GEEQ,        // `lhs >= rhs`
-    EX_EQ,          // `lhs == rhs`
-    EX_NTEQ,        // `lhs != rhs`
-    EX_LOGOR,       // `lhs || rhs`
-    EX_LOGAND,      // `lhs && rhs`
-    EX_UNARY_PLUS,  // 単項+
-    EX_UNARY_MINUS, // 単項-
-    EX_UNARY_ADDR,  // 単項&
-    EX_UNARY_DEREF, // 単項*
-    EX_INTEGER,     // 整数リテラル
-    EX_STRING,      // 文字列リテラル
-    EX_CALL,        // 呼び出し式
-    EX_LOCAL_VAR,   // 識別子
-    EX_ASSIGN,      // 代入式
-    EX_CONDITION,   // 三項演算子
+    EX_ADD,           // 加算
+    EX_SUB,           // 減算
+    EX_MUL,           // 乗算
+    EX_DIV,           // 除算
+    EX_MOD,           // 剰余算
+    EX_LE,            // `lhs < rhs`
+    EX_GE,            // `lhs > rhs`
+    EX_LEEQ,          // `lhs <= rhs`
+    EX_GEEQ,          // `lhs >= rhs`
+    EX_EQ,            // `lhs == rhs`
+    EX_NTEQ,          // `lhs != rhs`
+    EX_LOGOR,         // `lhs || rhs`
+    EX_LOGAND,        // `lhs && rhs`
+    EX_UNARY_PLUS,    // 単項+
+    EX_UNARY_MINUS,   // 単項-
+    EX_UNARY_ADDR,    // 単項&
+    EX_UNARY_DEREF,   // 単項*
+    EX_INTEGER,       // 整数リテラル
+    EX_STRING,        // 文字列リテラル
+    EX_CALL,          // 呼び出し式
+    EX_LOCAL_VAR,     // 識別子
+    EX_ASSIGN,        // 代入式
+    EX_CONDITION,     // 三項演算子
+    EX_MEMBER_ACCESS, // メンバアクセス式
     // sizeof 演算子
     // analyze() によって変換されるので注意
     EX_UNARY_SIZEOF,
@@ -231,8 +247,12 @@ struct Expr
     // 変数のデータの格納
     // 意味解析時に格納しておくことで，コード生成時の計算を省略する
     Variable *var;
+    // メンバ名
+    char *copied_member;
+    Member *member;
 };
 
+Expr *new_member_access(Expr *un_op, Token *member_name, char *str, size_t line_num);
 Expr *new_conditional_expr(Expr *cond, Expr *lhs, Expr *rhs, char *str, size_t line_num);
 Expr *new_unop(ExprKind op, Expr *child_expr, char *str, size_t line_num);
 Expr *new_binop(ExprKind op, Expr *lhs, Expr *rhs, char *str, size_t line_num);

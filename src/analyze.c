@@ -316,6 +316,25 @@ static CType *walk_expr(Expr **e)
 
         return lhs_type;
     }
+    case EX_MEMBER_ACCESS:
+    {
+        assert((*e)->copied_member);
+        assert((*e)->unary_op);
+
+        CType *struct_type = walk_expr(&(*e)->unary_op);
+        assert(struct_type);
+        assert(struct_type->members);
+
+        Member *member = map_get(struct_type->members, (*e)->copied_member, strlen((*e)->copied_member));
+        if (member == NULL)
+        {
+            error_at((*e)->str, (*e)->length, "undefined such a member in struct declaration");
+        }
+
+        (*e)->member = member;
+        (*e)->cty = member->cty;
+        return member->cty;
+    }
     default:
         error_at((*e)->str, (*e)->line, "cannot analyze from it");
         return NULL;

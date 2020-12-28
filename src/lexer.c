@@ -92,7 +92,7 @@ void tokenize(TokenList *tokens, char *p)
             continue;
         }
 
-        if (strchr("+-*/(){}[]<>;=,%&?:", *p) != NULL)
+        if (strchr("+-*/(){}[]<>;=,%&?:.", *p) != NULL)
         {
             TokenKind op = char_to_operator(*p);
             vec_push(tokens, new_token(op, p++, 1, line_num_g));
@@ -167,8 +167,8 @@ static Token *multilength_symbol(char *ptr)
 // 識別子のスキャン
 static Token *c_keyword(char *ptr)
 {
-    char *keywords[] = {"return", "if", "else", "for", "while", "int", "sizeof", "char", "static", "extern", NULL};
-    TokenKind kinds[] = {TK_RETURN, TK_IF, TK_ELSE, TK_FOR, TK_WHILE, TK_INT, TK_SIZEOF, TK_CHAR, TK_STATIC, TK_EXTERN};
+    char *keywords[] = {"return", "if", "else", "for", "while", "int", "sizeof", "char", "static", "extern", "struct", NULL};
+    TokenKind kinds[] = {TK_RETURN, TK_IF, TK_ELSE, TK_FOR, TK_WHILE, TK_INT, TK_SIZEOF, TK_CHAR, TK_STATIC, TK_EXTERN, TK_STRUCT};
     // 必ずkeywords[i] != NULLと比較すること．
     // kindsとkeywordsには要素数の差がある(len(keywords == len(kinds) - 1))
 
@@ -250,6 +250,8 @@ static TokenKind char_to_operator(char op)
 {
     switch (op)
     {
+    case '.':
+        return TK_DOT;
     case '+':
         return TK_PLUS;
     case '-':

@@ -209,6 +209,12 @@ static void gen_expr(Expr *expr)
         gen_lvalue(expr);
         gen_load(expr->cty);
         break;
+    case EX_MEMBER_ACCESS:
+    {
+        gen_lvalue(expr);
+        gen_load(expr->cty);
+        break;
+    }
     case EX_CALL:
     {
         int nparams = 0;
@@ -319,6 +325,14 @@ static void gen_lvalue(Expr *expr)
         // 変数のアドレスをスタックに積むだけでなく
         // そのアドレスに格納されたアドレスを得る操作をして良いので，gen_exprを呼ぶ
         gen_expr(expr->unary_op);
+        break;
+    }
+    case EX_MEMBER_ACCESS:
+    {
+        gen_lvalue(expr->unary_op);
+        pop_reg("rax");
+        fprintf(output_file_g, "  add rax, %zu\n", expr->member->offset);
+        push_reg("rax");
         break;
     }
     default:

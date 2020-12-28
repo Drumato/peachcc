@@ -18,34 +18,19 @@ int assert(int expected, int actual)
 
 int main()
 {
-    int x;
-    x = 2;
+    case_id_g = 0;
+
+    struct
     {
-        int x;
-        x = 3;
-    }
-    assert(2, x);
+        int a;
+        int b;
+    } x;
+    x.a = 1;
+    x.b = 2;
 
-    int y;
-    y = 2;
-    {
-        int y;
-        y = 3;
-
-        {
-            int y;
-            y = 4;
-        }
-    }
-    assert(2, y);
-
-    int z;
-    z = 2;
-    {
-        z = 3;
-    }
-    assert(3, z);
-
-    printf("scope.c OK\n\n");
+    assert(1, x.a);
+    assert(2, x.b);
+    assert(3, x.a + x.b);
+    printf("struct.c OK\n\n");
     return 0;
 }
