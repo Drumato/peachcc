@@ -1,5 +1,9 @@
 int case_id_g;
 
+static int decl();
+static int decl2(int arg, char arg2);
+static int decl3(int arg, char **arg2);
+
 static int assert(int expected, int actual)
 {
     if (expected == actual)

@@ -840,7 +840,11 @@ TranslationUnit *parse(TokenList *tokens)
             continue;
         }
 
-        vec_push(fns, function(tokens));
+        Function *f;
+        if ((f = function(tokens)) != NULL)
+        {
+            vec_push(fns, f);
+        }
     }
     translation_unit->functions = fns;
     translation_unit->global_variables = global_variables_g;
@@ -859,15 +863,20 @@ static Function *function(TokenList *tokens)
     char *func_name = fn_id->str;
     size_t func_name_length = fn_id->length;
 
+    Vector *params = parameter_list(tokens);
+
+    if (try_eat(tokens, TK_SEMICOLON))
+    {
+        // プロトタイプ宣言等なので定義の中身をパースしない
+        return NULL;
+    }
+
+    Vector *stmts = compound_stmt(tokens);
+
     Function *f = new_function(func_name, func_name_length);
     f->scope = cur_scope_g;
     f->return_type = decl->cty;
     f->is_static = decl->is_static;
-
-    Vector *params = parameter_list(tokens);
-
-    Vector *stmts = compound_stmt(tokens);
-
     f->stmts = stmts;
     f->params = params;
     f->stack_size = total_stack_size_in_fn_g;
