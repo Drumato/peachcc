@@ -101,6 +101,7 @@ enum TokenKind
     TK_WHILE,           // "while"
     TK_SIZEOF,          // "sizeof"
     TK_STATIC,          // "static"
+    TK_EXTERN,          // "extern"
     TK_EOF,             // 入力の終わり
 };
 typedef enum TokenKind TokenKind;
@@ -351,6 +352,7 @@ typedef struct Decl Decl;
 struct DeclarationSpecifier
 {
     bool is_static;
+    bool is_extern;
     CType *cty;
 };
 typedef struct DeclarationSpecifier DeclarationSpecifier;

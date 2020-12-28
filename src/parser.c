@@ -151,7 +151,8 @@ bool is_typename(TokenList *tokens)
 // "static"
 bool start_storage_class(TokenList *tokens)
 {
-    return current_tk(tokens) == TK_STATIC;
+    TokenKind cur = current_tk(tokens);
+    return cur == TK_STATIC || cur == TK_EXTERN;
 }
 
 // declaration-specifiers init-declarator-list? ';'
@@ -226,6 +227,7 @@ DeclarationSpecifier *declaration_specifiers(TokenList *tokens)
 {
     DeclarationSpecifier *decl_spec = (DeclarationSpecifier *)calloc(1, sizeof(DeclarationSpecifier));
     decl_spec->is_static = false;
+    decl_spec->is_extern = false;
 
     while (true)
     {
@@ -335,8 +337,8 @@ static CType *type_specifier(TokenList *tokens)
 // "static"
 static void storage_class_specifier(TokenList *tokens, DeclarationSpecifier **decl)
 {
-    expect(tokens, TK_STATIC);
-    (*decl)->is_static = true;
+    (*decl)->is_static = (*decl)->is_static | try_eat(tokens, TK_STATIC);
+    (*decl)->is_extern = (*decl)->is_extern | try_eat(tokens, TK_EXTERN);
 }
 
 // assign
