@@ -188,6 +188,13 @@ Vector *parameter_list(TokenList *tokens)
 
     while (!try_eat(tokens, TK_RPAREN))
     {
+        // 可変長引数のやつ
+        // 必ず引数リストの最後に来るはずなので，breakしてしまって良い
+        if (try_eat(tokens, TK_ELLIPSIS))
+        {
+            expect(tokens, TK_RPAREN);
+            break;
+        }
         Decl *param = parameter_declaration(tokens);
         Variable *param_v = insert_localvar_to_fn_env(&cur_scope_g, param->id, param->cty);
         vec_push(params, param_v);

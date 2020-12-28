@@ -82,6 +82,7 @@ enum TokenKind
     TK_DECREMENT, // `--`
     TK_LOGAND,    // `&&`
     TK_LOGOR,     // `||`
+    TK_ELLIPSIS,  // `...`
 
     TK_ASSIGN,          // `=`
     TK_COLON,           // `:`

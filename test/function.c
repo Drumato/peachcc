@@ -4,6 +4,9 @@ static int decl();
 static int decl2(int arg, char arg2);
 static int decl3(int arg, char **arg2);
 
+// 本当は const char *format, ... だけど，今は気にしない
+int printf(char *format, ...);
+
 static int assert(int expected, int actual)
 {
     if (expected == actual)
