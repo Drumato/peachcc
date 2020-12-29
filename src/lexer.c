@@ -92,7 +92,7 @@ void tokenize(TokenList *tokens, char *p)
             continue;
         }
 
-        if (strchr("+-*/(){}[]<>;=,%&?:.", *p) != NULL)
+        if (strchr("+-*/(){}[]<>;=,%&!?:.", *p) != NULL)
         {
             TokenKind op = char_to_operator(*p);
             vec_push(tokens, new_token(op, p++, 1, line_num_g));
@@ -286,6 +286,8 @@ static TokenKind char_to_operator(char op)
         return TK_COMMA;
     case '=':
         return TK_ASSIGN;
+    case '!':
+        return TK_BANG;
     case '?':
         return TK_QUESTION;
     case ':':

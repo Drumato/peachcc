@@ -196,6 +196,10 @@ static CType *walk_expr(Expr **e)
         assert((*e)->unary_op);
         (*e)->cty = new_int();
         return (*e)->cty;
+    case EX_UNARY_NOT:
+        assert((*e)->unary_op);
+        (*e)->cty = new_int();
+        return (*e)->cty;
     case EX_UNARY_MINUS:
         assert((*e)->unary_op);
         (*e)->cty = new_int();

@@ -562,7 +562,7 @@ static Expr *multiplication(TokenList *tokens)
     return e;
 }
 
-// ('+' | '-' | '*' | '&' | "sizeof" | "++" | "--") prefix_unary) | postfix_unary
+// ('+' | '-' | '*' | '&' | "sizeof" | '++' | '--' | '!') prefix_unary) | postfix_unary
 static Expr *prefix_unary(TokenList *tokens)
 {
     Expr *e;
@@ -578,6 +578,8 @@ static Expr *prefix_unary(TokenList *tokens)
         e = new_unop(EX_UNARY_ADDR, prefix_unary(tokens), loc->str, loc->line);
     else if (try_eat(tokens, TK_SIZEOF))
         e = new_unop(EX_UNARY_SIZEOF, prefix_unary(tokens), loc->str, loc->line);
+    else if (try_eat(tokens, TK_BANG))
+        e = new_unop(EX_UNARY_NOT, prefix_unary(tokens), loc->str, loc->line);
     else if (try_eat(tokens, TK_INCREMENT))
     {
         // ++x は単に x = x + 1として良い

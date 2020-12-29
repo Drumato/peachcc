@@ -196,6 +196,11 @@ static void dump_expr(Expr *e)
         dump_expr(e->unary_op);
         fprintf(stderr, ")");
         break;
+    case EX_UNARY_NOT:
+        fprintf(stderr, "NotExpr(");
+        dump_expr(e->unary_op);
+        fprintf(stderr, ")");
+        break;
     case EX_MEMBER_ACCESS:
         fprintf(stderr, "MemberAccessExpr(");
         dump_expr(e->unary_op);

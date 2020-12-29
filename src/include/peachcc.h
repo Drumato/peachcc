@@ -87,6 +87,7 @@ enum TokenKind
 
     TK_ASSIGN,          // `=`
     TK_COLON,           // `:`
+    TK_BANG,            // `!`
     TK_QUESTION,        // `?`
     TK_COMMA,           // `,`
     TK_SEMICOLON,       // `;`
@@ -213,6 +214,7 @@ typedef enum
     // sizeof 演算子
     // analyze() によって変換されるので注意
     EX_UNARY_SIZEOF,
+    EX_UNARY_NOT, // 否定演算子
 } ExprKind;
 
 typedef struct Expr Expr;

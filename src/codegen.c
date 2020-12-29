@@ -249,6 +249,7 @@ static void gen_expr(Expr *expr)
     case EX_UNARY_PLUS:
     case EX_UNARY_MINUS:
     case EX_UNARY_DEREF:
+    case EX_UNARY_NOT:
         gen_unary_op_expr(expr);
         break;
     case EX_ADD:
@@ -421,6 +422,12 @@ static void gen_unary_op_expr(Expr *expr)
     case EX_UNARY_DEREF:
         // 配列オブジェクトかもしれないので，単にデリファレンスせずgen_loadでチェックを挟む
         gen_load(expr->cty);
+        break;
+    case EX_UNARY_NOT:
+        pop_reg("rax");
+        fprintf(output_file_g, "  cmp rax, 0\n");
+        fprintf(output_file_g, "  sete al\n");
+        fprintf(output_file_g, "  movzx rax, al\n");
         break;
     default:
         error_at(expr->str, expr->line, "It's not a unary operation");
