@@ -35,7 +35,8 @@ static void walk_fn(Function *f)
     // ローカル変数のスタック割当
     // パース後の状態では，すべての変数のオフセットが0の状態で格納されている
     Variable *lv;
-    size_t total_stack_size = f->stack_size;
+    f->stack_size = align_to(f->stack_size, 16);
+    size_t offset = f->stack_size;
     for (size_t i = 0; i < f->scope->variables->keys->len; i++)
     {
         lv = f->scope->variables->vals->data[i];
@@ -43,8 +44,9 @@ static void walk_fn(Function *f)
         assert(lv->cty);
         assert(lv->str);
 
-        lv->stack_offset = total_stack_size;
-        total_stack_size = total_stack_size - lv->cty->size;
+        lv->stack_offset = -offset;
+        offset = offset - lv->cty->size;
+        offset = align_to(offset, lv->cty->align);
     }
 
     for (size_t i = 0; i < f->stmts->len; i++)

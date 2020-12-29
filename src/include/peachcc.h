@@ -15,6 +15,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+int align_to(int n, int align);
+
 struct CompileOption
 {
     char *output_file;
@@ -157,7 +159,7 @@ typedef struct CType CType;
 struct Member
 {
     CType *cty;
-    size_t offset;
+    int offset;
 };
 typedef struct Member Member;
 
@@ -176,6 +178,9 @@ struct CType
 
     // 構造体型に定義されたメンバ一覧
     Map *members;
+
+    // アライメントの計算に利用
+    int align;
 };
 
 CType *new_int(void);
@@ -341,7 +346,7 @@ struct Variable
     bool is_global;
 
     //  ローカル変数でのみ使用
-    size_t stack_offset;
+    int stack_offset;
     // グローバル変数でのみ使用
     char *init_data;
     // グローバル変数でのみ使用

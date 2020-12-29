@@ -332,9 +332,15 @@ static int escaped_char(char *p, int *length)
     {
         if ('0' <= *p && *p <= '7')
         {
-            char *octal = p;
-            int value = strtol(p, &octal, 8);
-            *length = octal - p;
+            char *start = p;
+            int value = *p++ - '0';
+            if ('0' <= *p && *p <= '7')
+            {
+                value = (value << 3) + (*p++ - '0');
+                if ('0' <= *p && *p <= '7')
+                    value = (value << 3) + (*p++ - '0');
+            }
+            *length = p - start;
             return value;
         }
         return *p;

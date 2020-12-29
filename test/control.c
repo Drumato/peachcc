@@ -1,15 +1,8 @@
-int case_id_g;
-
-int assert(int expected, int actual)
+int assert(int case_id, int expected, int actual)
 {
-    if (expected == actual)
+    if (expected != actual)
     {
-        printf("cases[%d] => %d\n", case_id_g, actual);
-        case_id_g = case_id_g + 1;
-    }
-    else
-    {
-        printf("cases[%d] => %d expected but got %d\n", case_id_g, expected, actual);
+        printf("case%d() => %d expected but got %d\n", case_id, expected, actual);
         exit(1);
     }
 
@@ -23,7 +16,8 @@ int case1()
         x = 2;
     else
         x = 3;
-    return x;
+    assert(1, 3, x);
+    return 0;
 }
 int case2()
 {
@@ -32,7 +26,8 @@ int case2()
         x = 2;
     else
         x = 3;
-    return x;
+    assert(2, 3, x);
+    return 0;
 }
 int case3()
 {
@@ -41,7 +36,8 @@ int case3()
         x = 2;
     else
         x = 3;
-    return x;
+    assert(3, 2, x);
+    return 0;
 }
 int case4()
 {
@@ -50,7 +46,8 @@ int case4()
         x = 2;
     else
         x = 3;
-    return x;
+    assert(4, 2, x);
+    return 0;
 }
 int case5()
 {
@@ -60,7 +57,9 @@ int case5()
     j = 0;
     for (i = 0; i <= 10; i = i + 1)
         j = i + j;
-    return j;
+
+    assert(5, 55, j);
+    return 0;
 }
 int case6()
 {
@@ -68,28 +67,18 @@ int case6()
     i = 0;
     while (i < 10)
         i = i + 1;
-    return i;
-}
-int case7()
-{
-    int i;
-    i = 0;
-    while (i < 10)
-        i = i + 1;
-    return i;
+    assert(6, 10, i);
+    return 0;
 }
 
 int main()
 {
-    case_id_g = 0;
-
-    assert(3, case1());
-    assert(3, case2());
-    assert(2, case3());
-    assert(2, case4());
-    assert(55, case5());
-    assert(10, case6());
-    assert(10, case7());
+    case1();
+    case2();
+    case3();
+    case4();
+    case5();
+    case6();
 
     printf("control.c OK\n\n");
     return 0;

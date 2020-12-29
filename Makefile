@@ -7,8 +7,8 @@ OBJS=$(SRCS:src/%.c=build/gen0/%.o)
 CC=/usr/bin/clang
 TEST_SRCS=$(wildcard test/*.c)
 TEST_OBJS=$(TEST_SRCS:.c=.exe)
-tmp_c_file := $(shell mktemp)
-GEN0=peachcc_gen0
+	tmp_c_file := $(shell mktemp)
+	GEN0=peachcc_gen0
 
 GEN1_ASMS=$(SRCS:src/%.c=build/gen1/%.s)
 
@@ -39,6 +39,7 @@ test/%.exe: peachcc_gen0 test/%.c
 
 test: $(TEST_OBJS)
 	@make clean
+	@echo "\e[32mALL TEST PASSED!\e[0m"
 
 clean:
 	@rm -f peachcc $(OBJS) $(TEST_OBJS) test/*.s *~ tmp* *.s build/gen1/*.c

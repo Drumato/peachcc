@@ -321,7 +321,7 @@ static CType *struct_decl(TokenList *tokens)
     expect(tokens, TK_LBRACE);
     Map *members = new_map();
 
-    size_t member_offset = 0;
+    int member_offset = 0;
     while (!try_eat(tokens, TK_RBRACE))
     {
         Decl *decl = declaration(tokens);
@@ -332,6 +332,7 @@ static CType *struct_decl(TokenList *tokens)
         member_name[decl->id->length] = 0;
 
         m->cty = decl->cty;
+        member_offset = align_to(member_offset, m->cty->align);
         m->offset = member_offset;
         member_offset = member_offset + m->cty->size;
         map_put(members, member_name, m);
