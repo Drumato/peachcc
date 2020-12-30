@@ -360,9 +360,11 @@ struct Scope
     Scope *inner;   // より内側のスコープ
     Scope *outer;   // より外側のスコープ
     Map *variables; // 変数定義
+    Map *tags;      // 構造体タグ
 };
 Scope *new_scope(Scope **parent);
 Variable *find_var(Scope *sc, char *key, size_t length);
+CType *find_tag(Scope *sc, char *tag, size_t length);
 
 /// lexer.c
 void tokenize(TokenList *tokens, char *p);

@@ -78,6 +78,49 @@ int case3()
     return 0;
 }
 
+int case4()
+{
+    struct t
+    {
+        int a;
+        int b;
+    } x;
+    struct t y;
+    assert(4, 16, sizeof(y));
+    return 0;
+}
+
+int case5()
+{
+    struct t
+    {
+        char a[2];
+    };
+    {
+        struct t
+        {
+            char a[4];
+        };
+    }
+
+    struct t y;
+    assert(5, 2, sizeof(y));
+    return 0;
+}
+int case6()
+{
+    struct t
+    {
+        int x;
+    };
+    int t;
+    t = 1;
+    struct t y;
+    y.x = 2;
+    assert(6, 3, t + y.x);
+    return 0;
+}
+
 int main()
 {
 
@@ -85,6 +128,9 @@ int main()
     case1();
     case2();
     case3();
+    case4();
+    case5();
+    case6();
 
     printf("struct.c OK\n\n");
     return 0;

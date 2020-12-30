@@ -27,6 +27,7 @@ static Token *direct_declarator(CType **cty, TokenList *tokens);
 static void type_suffix(CType **cty, TokenList *tokens);
 static void storage_class_specifier(TokenList *tokens, DeclarationSpecifier **decl);
 static Function *function(TokenList *tokens);
+static void new_type_tag(Scope **sc, Token *tag, CType *cty);
 
 // expr parsers;
 static Expr *conditional(TokenList *tokens);
@@ -142,6 +143,12 @@ Variable *insert_localvar_to_fn_env(Scope **sc, Token *id, CType *cty)
     return v;
 }
 
+// 構造体タグを新しく登録
+static void new_type_tag(Scope **sc, Token *tag, CType *cty)
+{
+    map_put((*sc)->tags, tag->str, cty);
+}
+
 bool is_typename(TokenList *tokens)
 {
     TokenKind cur = current_tk(tokens);
@@ -159,7 +166,7 @@ bool start_storage_class(TokenList *tokens)
 // 現状はこんな感じで良い
 Decl *declaration(TokenList *tokens)
 {
-    Token *id;
+    Token *id = NULL;
     DeclarationSpecifier *declspec = decl_spec(tokens, &id);
     expect(tokens, TK_SEMICOLON);
 
@@ -196,6 +203,7 @@ Vector *parameter_list(TokenList *tokens)
             expect(tokens, TK_RPAREN);
             break;
         }
+
         Decl *param = parameter_declaration(tokens);
         Variable *param_v = insert_localvar_to_fn_env(&cur_scope_g, param->id, param->cty);
         vec_push(params, param_v);
@@ -211,14 +219,17 @@ Vector *parameter_list(TokenList *tokens)
 }
 
 // declaration-specifiers declarator
+// 中身はほぼdeclarationと同じだが，semicolonの要求がない
 static Decl *parameter_declaration(TokenList *tokens)
 {
-    Decl *param = (Decl *)calloc(1, sizeof(Decl));
-    DeclarationSpecifier *decl_spec = declaration_specifiers(tokens);
-    Token *id = declarator(&decl_spec->cty, tokens);
-    param->cty = decl_spec->cty;
-    param->id = id;
-    return param;
+    Token *id = NULL;
+    DeclarationSpecifier *declspec = decl_spec(tokens, &id);
+
+    Decl *decl = (Decl *)calloc(1, sizeof(Decl));
+    decl->cty = declspec->cty;
+    decl->id = id;
+
+    return decl;
 }
 
 // type-specifier (type-specifier | storage-class specifier)*
@@ -283,10 +294,16 @@ static void pointer(CType **cty, TokenList *tokens)
     }
 }
 
-// identifier type-suffix?
+// identifier? type-suffix?
 // 実際の仕様からかなり削っているので注意
 static Token *direct_declarator(CType **cty, TokenList *tokens)
 {
+    // struct Tag {}; のように，識別子のない宣言もある
+    if (!eatable(tokens, TK_IDENTIFIER))
+    {
+        return NULL;
+    }
+
     Token *id = expect_identifier(tokens);
 
     if (!eatable(tokens, TK_LBRACKET))
@@ -315,10 +332,27 @@ static void type_suffix(CType **cty, TokenList *tokens)
 // "struct" identifier? '{' declaration '}'
 static CType *struct_decl(TokenList *tokens)
 {
+    Token *tag = NULL;
     expect(tokens, TK_STRUCT);
 
     // とりあえずタグ名は無視する
-    expect(tokens, TK_LBRACE);
+    if (eatable(tokens, TK_IDENTIFIER))
+    {
+        tag = expect_identifier(tokens);
+    }
+
+    if (!try_eat(tokens, TK_LBRACE))
+    {
+        // 既に定義された構造体タグで宣言されているとする
+        CType *cty = find_tag(cur_scope_g, tag->str, tag->length);
+        if (cty == NULL)
+        {
+            error_at(tag->str, tag->line, "unknown struct type");
+        }
+        return cty;
+    }
+
+    // 構造体の中身が定義されている場合
     Map *members = new_map();
 
     int member_offset = 0;
@@ -338,7 +372,13 @@ static CType *struct_decl(TokenList *tokens)
         map_put(members, member_name, m);
     }
 
-    return new_struct(members);
+    CType *struct_ty = new_struct(members);
+    if (tag)
+    {
+        new_type_tag(&cur_scope_g, tag, struct_ty);
+    }
+
+    return struct_ty;
 }
 
 // "int" | "char" | "struct" identifier?
@@ -853,6 +893,12 @@ static Vector *block_item_list(TokenList *tokens)
         if (is_typename(tokens))
         {
             Decl *decl = declaration(tokens);
+            // empty declarationの場合は無視
+            if (decl->id == NULL)
+            {
+                continue;
+            }
+
             insert_localvar_to_fn_env(&cur_scope_g, decl->id, decl->cty);
             continue;
         }

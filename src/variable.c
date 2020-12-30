@@ -14,6 +14,7 @@ Scope *new_scope(Scope **parent)
 {
     Scope *scope = (Scope *)calloc(1, sizeof(Scope));
     scope->variables = new_map();
+    scope->tags = new_map();
     if (parent != NULL)
     {
         (*parent)->inner = scope;
@@ -32,6 +33,20 @@ Variable *find_var(Scope *sc, char *key, size_t length)
         if (v != NULL)
         {
             return v;
+        }
+    }
+
+    return NULL;
+}
+
+CType *find_tag(Scope *sc, char *tag, size_t length)
+{
+    for (Scope *s = sc; s != NULL; s = s->outer)
+    {
+        CType *cty = map_get(s->tags, tag, length);
+        if (cty != NULL)
+        {
+            return cty;
         }
     }
 
