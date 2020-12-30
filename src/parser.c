@@ -638,7 +638,7 @@ static Expr *prefix_unary(TokenList *tokens)
     return e;
 }
 
-// primary (('[' expr ']')* | '++' | '--' | '.' ident)?
+// primary (('[' expr ']')* | '++' | '--' | '->' ident | '.' ident)?
 static Expr *postfix_unary(TokenList *tokens)
 {
     Token *loc = current_token(tokens);
@@ -670,6 +670,13 @@ static Expr *postfix_unary(TokenList *tokens)
         {
             Token *member_name = expect_identifier(tokens);
             e = new_member_access(e, member_name, loc->str, loc->line);
+        }
+        else if (try_eat(tokens, TK_ARROW))
+        {
+            // x->y は単に (*x).yとしてしまう
+            Token *member_name = expect_identifier(tokens);
+            Expr *deref = new_unop(EX_UNARY_DEREF, e, e->str, e->line);
+            e = new_member_access(deref, member_name, loc->str, loc->line);
         }
         else
         {

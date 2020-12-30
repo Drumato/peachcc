@@ -148,8 +148,8 @@ static Token *identifier(char *ptr)
 
 static Token *multilength_symbol(char *ptr)
 {
-    char *symbols[] = {"==", "!=", "<=", ">=", "++", "--", "&&", "||", "...", NULL};
-    TokenKind kinds[] = {TK_EQ, TK_NTEQ, TK_LEEQ, TK_GEEQ, TK_INCREMENT, TK_DECREMENT, TK_LOGAND, TK_LOGOR, TK_ELLIPSIS};
+    char *symbols[] = {"==", "!=", "<=", ">=", "++", "--", "&&", "||", "...", "->", NULL};
+    TokenKind kinds[] = {TK_EQ, TK_NTEQ, TK_LEEQ, TK_GEEQ, TK_INCREMENT, TK_DECREMENT, TK_LOGAND, TK_LOGOR, TK_ELLIPSIS, TK_ARROW};
 
     // 必ずsymbols[i] != NULLと比較すること．
     // kindsとsymbolsには要素数の差がある(len(symbols == len(kinds) - 1))

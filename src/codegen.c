@@ -285,7 +285,15 @@ static void gen_expr(Expr *expr)
         push_reg("rax");
         gen_expr(expr->rhs);
         pop_reg("rdi");
-        fprintf(output_file_g, "  mov [rdi], rax\n");
+        if (expr->lhs->cty->size == 1)
+        {
+
+            fprintf(output_file_g, "  mov [rdi], al\n");
+        }
+        else
+        {
+            fprintf(output_file_g, "  mov [rdi], rax\n");
+        }
         break;
     case EX_CONDITION:
     {

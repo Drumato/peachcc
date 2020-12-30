@@ -120,6 +120,30 @@ int case6()
     assert(6, 3, t + y.x);
     return 0;
 }
+int case7()
+{
+    struct t
+    {
+        char a;
+    } x;
+    struct t *y;
+    y = &x;
+    x.a = 3;
+    assert(7, 3, y->a);
+    return 0;
+}
+int case8()
+{
+    struct t
+    {
+        char a;
+    } x;
+    struct t *y;
+    y = &x;
+    y->a = 3;
+    assert(8, 3, x.a);
+    return 0;
+}
 
 int main()
 {
@@ -131,6 +155,8 @@ int main()
     case4();
     case5();
     case6();
+    case7();
+    case8();
 
     printf("struct.c OK\n\n");
     return 0;
