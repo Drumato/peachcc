@@ -152,7 +152,7 @@ static void new_type_tag(Scope **sc, Token *tag, CType *cty)
 bool is_typename(TokenList *tokens)
 {
     TokenKind cur = current_tk(tokens);
-    return cur == TK_INT || cur == TK_CHAR || cur == TK_STRUCT;
+    return cur == TK_INT || cur == TK_CHAR || cur == TK_STRUCT || cur == TK_VOID;
 }
 
 // "static"
@@ -396,6 +396,11 @@ static CType *type_specifier(TokenList *tokens)
     {
         expect(tokens, TK_CHAR);
         return new_char();
+    }
+    case TK_VOID:
+    {
+        expect(tokens, TK_VOID);
+        return new_void();
     }
     case TK_STRUCT:
     {
@@ -904,6 +909,10 @@ static Vector *block_item_list(TokenList *tokens)
             if (decl->id == NULL)
             {
                 continue;
+            }
+            if (decl->cty->kind == TY_VOID)
+            {
+                error_at(decl->id->str, decl->id->line, "not allowed declaration as void");
             }
 
             insert_localvar_to_fn_env(&cur_scope_g, decl->id, decl->cty);

@@ -35,7 +35,7 @@ typedef struct
     int pos;
 } Vector;
 
-Vector *new_vec(void);
+Vector *new_vec();
 void vec_push(Vector *v, void *elem);
 void vec_pushi(Vector *v, int val);
 void *vec_pop(Vector *v);
@@ -52,7 +52,7 @@ struct Map
 };
 typedef struct Map Map;
 
-Map *new_map(void);
+Map *new_map();
 void map_put(Map *map, char *key, void *val);
 void *map_get(Map *map, char *key, size_t length);
 // bool map_exists(Map *map, char *key, size_t length);
@@ -99,6 +99,7 @@ enum TokenKind
     TK_IDENTIFIER,      // 識別子
     TK_INT,             // "int"
     TK_CHAR,            // "char"
+    TK_VOID,            // "void"
     TK_RETURN,          // "return"
     TK_IF,              // "if"
     TK_ELSE,            // "else"
@@ -150,6 +151,7 @@ enum CTypeKind
 {
     TY_INT,
     TY_CHAR,
+    TY_VOID,
     TY_PTR,
     TY_ARRAY,
     TY_STRUCT,
@@ -184,8 +186,9 @@ struct CType
     int align;
 };
 
-CType *new_int(void);
-CType *new_char(void);
+CType *new_int();
+CType *new_char();
+CType *new_void();
 CType *new_ptr(CType *base);
 CType *new_array(CType *base, int array_len);
 CType *new_struct(Map *members);
@@ -336,7 +339,7 @@ struct TranslationUnit
     Map *global_variables;
 };
 typedef struct TranslationUnit TranslationUnit;
-TranslationUnit *new_translation_unit(void);
+TranslationUnit *new_translation_unit();
 
 /// variable.c
 struct Variable

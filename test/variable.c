@@ -164,11 +164,11 @@ int case19()
     assert(19, 2, foo);
     assert(19, 1, --foo);
     assert(19, 1, foo);
-
-    int *bar;
-    bar = &foo;
-    assert(19, 3, *bar++);
     return 0;
+}
+void case20()
+{
+    void *x;
 }
 
 int main()
@@ -191,6 +191,8 @@ int main()
     case16();
     case17();
     case18();
+    case19();
+    case20();
 
     printf("variable.c OK\n\n");
     return 0;

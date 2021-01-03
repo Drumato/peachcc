@@ -9,13 +9,17 @@ static CType *new_ctype(CTypeKind k, size_t size, int align)
     return cty;
 }
 
-CType *new_int(void)
+CType *new_int()
 {
     return new_ctype(TY_INT, 8, 8);
 }
-CType *new_char(void)
+CType *new_char()
 {
     return new_ctype(TY_CHAR, 1, 1);
+}
+CType *new_void()
+{
+    return new_ctype(TY_VOID, 0, 0);
 }
 CType *new_ptr(CType *base)
 {
