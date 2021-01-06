@@ -101,6 +101,7 @@ enum TokenKind
     TK_INT,             // "int"
     TK_CHAR,            // "char"
     TK_VOID,            // "void"
+    TK_SHORT,           // "short"
     TK_RETURN,          // "return"
     TK_IF,              // "if"
     TK_ELSE,            // "else"
@@ -153,6 +154,7 @@ enum CTypeKind
 {
     TY_INT,
     TY_LONG,
+    TY_SHORT,
     TY_CHAR,
     TY_VOID,
     TY_PTR,
@@ -191,6 +193,7 @@ struct CType
 
 CType *new_int();
 CType *new_long();
+CType *new_short();
 CType *new_char();
 CType *new_void();
 CType *new_ptr(CType *base);

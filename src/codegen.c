@@ -3,6 +3,7 @@
 static FILE *output_file_g;
 static int label_num_g;
 static char *param_reg8_g[] = {"dil", "sil", "dl", "cl", "r8b", "r9b"};
+static char *param_reg16_g[] = {"di", "si", "dx", "cx", "r8w", "r9w"};
 static char *param_reg32_g[] = {"edi", "esi", "edx", "ecx", "r8d", "r9d"};
 static char *param_reg64_g[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 static Function *cur_fn_g;
@@ -490,6 +491,10 @@ static void gen_load(CType *cty)
     {
         fprintf(output_file_g, "  movsx rax, BYTE PTR [rax]\n");
     }
+    else if (cty->size == 2)
+    {
+        fprintf(output_file_g, "  movswq rax, WORD PTR [rax]\n");
+    }
     else if (cty->size == 4)
     {
         fprintf(output_file_g, "  movsxd rax, DWORD PTR [rax]\n");
@@ -517,6 +522,10 @@ static void store_parameters_to_stack(size_t reg_num, int stack_offset, size_t s
     case 1:
         reg = param_reg8_g[reg_num];
         break;
+    case 2:
+        reg = param_reg16_g[reg_num];
+
+        break;
     case 4:
         reg = param_reg32_g[reg_num];
         break;
@@ -541,6 +550,9 @@ static void store(CType *cty)
     {
     case 1:
         src_reg = "al";
+        break;
+    case 2:
+        src_reg = "ax";
         break;
     case 4:
         src_reg = "eax";

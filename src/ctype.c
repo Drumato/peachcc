@@ -13,6 +13,10 @@ CType *new_int()
 {
     return new_ctype(TY_INT, 4, 4);
 }
+CType *new_short()
+{
+    return new_ctype(TY_SHORT, 2, 2);
+}
 CType *new_long()
 {
     return new_ctype(TY_LONG, 8, 8);

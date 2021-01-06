@@ -152,8 +152,8 @@ static void new_type_tag(Scope **sc, Token *tag, CType *cty)
 bool start_typename(TokenList *tokens)
 {
     TokenKind cur = current_tk(tokens);
-    TokenKind typenames[] = {TK_INT, TK_CHAR, TK_STRUCT, TK_LONG, TK_VOID};
-    for (size_t i = 0; i < 5; i++)
+    TokenKind typenames[] = {TK_INT, TK_CHAR, TK_STRUCT, TK_LONG, TK_VOID, TK_SHORT};
+    for (size_t i = 0; i < 6; i++)
     {
         if (cur == typenames[i])
         {
@@ -404,6 +404,11 @@ static CType *type_specifier(TokenList *tokens)
     {
         expect(tokens, TK_CHAR);
         return new_char();
+    }
+    case TK_SHORT:
+    {
+        expect(tokens, TK_SHORT);
+        return new_short();
     }
     case TK_LONG:
     {

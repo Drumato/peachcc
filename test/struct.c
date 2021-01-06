@@ -153,6 +153,15 @@ void case9()
     } x;
     assert(9, 16, sizeof(x));
 }
+void case10()
+{
+    struct
+    {
+        char a;
+        short b;
+    } x;
+    assert(10, 4, sizeof(x));
+}
 
 int main()
 {

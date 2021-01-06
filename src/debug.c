@@ -37,6 +37,9 @@ void dump_ctype(CType *cty)
     case TY_INT:
         fprintf(stderr, "int");
         break;
+    case TY_SHORT:
+        fprintf(stderr, "short");
+        break;
     case TY_LONG:
         fprintf(stderr, "long");
         break;
