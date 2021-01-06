@@ -51,14 +51,14 @@ int case4()
 int case5()
 {
     int x;
-    assert(5, 8, sizeof(x));
+    assert(5, 4, sizeof(x));
     return 0;
 }
 
 int case6()
 {
     int x;
-    assert(6, 8, sizeof x);
+    assert(6, 4, sizeof x);
     return 0;
 }
 int case7()
@@ -70,43 +70,43 @@ int case7()
 int case8()
 {
     int x[4];
-    assert(8, 32, sizeof(x));
+    assert(8, 16, sizeof(x));
     return 0;
 }
 int case9()
 {
     int x[3][4];
-    assert(9, 96, sizeof(x));
+    assert(9, 48, sizeof(x));
     return 0;
 }
 int case10()
 {
     int x[3][4];
-    assert(10, 32, sizeof(*x));
+    assert(10, 16, sizeof(*x));
     return 0;
 }
 int case11()
 {
     int x[3][4];
-    assert(11, 8, sizeof(**x));
+    assert(11, 4, sizeof(**x));
     return 0;
 }
 int case12()
 {
     int x[3][4];
-    assert(12, 9, sizeof(**x) + 1);
+    assert(12, 5, sizeof(**x) + 1);
     return 0;
 }
 int case13()
 {
     int x[3][4];
-    assert(13, 9, sizeof **x + 1);
+    assert(13, 5, sizeof **x + 1);
     return 0;
 }
 int case14()
 {
     int x[3][4];
-    assert(14, 8, sizeof(**x + 1));
+    assert(14, 4, sizeof(**x + 1));
 
     return 0;
 }
@@ -115,7 +115,7 @@ int case15()
 {
     int x;
     x = 1;
-    assert(15, 8, sizeof(x = 2));
+    assert(15, 4, sizeof(x = 2));
     return 0;
 }
 int case16()
@@ -129,8 +129,8 @@ int case16()
     assert(16, 2, g2[2]);
     assert(16, 3, g2[3]);
 
-    assert(16, 8, sizeof(g1));
-    assert(16, 32, sizeof(g2));
+    assert(16, 4, sizeof(g1));
+    assert(16, 16, sizeof(g2));
     return 0;
 }
 

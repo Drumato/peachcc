@@ -36,7 +36,7 @@ static void walk_fn(Function *f)
     // パース後の状態では，すべての変数のオフセットが0の状態で格納されている
     Variable *lv;
     f->stack_size = align_to(f->stack_size, 16);
-    size_t offset = f->stack_size;
+    int offset = f->stack_size;
     for (size_t i = 0; i < f->scope->variables->keys->len; i++)
     {
         lv = f->scope->variables->vals->data[i];
@@ -46,7 +46,7 @@ static void walk_fn(Function *f)
 
         lv->stack_offset = -offset;
         offset = offset - lv->cty->size;
-        offset = align_to(offset, lv->cty->align);
+        // アラインできていない、するべき？
     }
 
     for (size_t i = 0; i < f->stmts->len; i++)

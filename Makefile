@@ -14,7 +14,7 @@ GEN1_ASMS=$(SRCS:src/%.c=build/gen1/%.s)
 
 # build peachcc by clang
 peachcc_gen0: $(OBJS)
-	clang -o $(GEN0) $(OBJS) $(LDFLAGS)
+	$(CC) -o $(GEN0) $(OBJS) $(LDFLAGS)
 
 build/gen0/%.o : src/%.c src/include/peachcc.h
 	$(CC) $(CFLAGS) -c $< -o $@

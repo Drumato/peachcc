@@ -3,6 +3,7 @@
 static FILE *output_file_g;
 static int label_num_g;
 static char *param_reg8_g[] = {"dil", "sil", "dl", "cl", "r8b", "r9b"};
+static char *param_reg32_g[] = {"edi", "esi", "edx", "ecx", "r8d", "r9d"};
 static char *param_reg64_g[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 static Function *cur_fn_g;
 
@@ -19,6 +20,8 @@ static void gen_compare_rax_and_rdi_by(char *mode);
 static void gen_load(CType *cty);
 static void push_reg(char *reg);
 static void pop_reg(char *reg);
+static void store_parameters_to_stack(size_t reg_num, int stack_offset, size_t size);
+static void store(CType *cty);
 
 void codegen(FILE *output_file, TranslationUnit *translation_unit)
 {
@@ -77,14 +80,7 @@ static void gen_fn(Function *fn)
     for (size_t i = 0; i < fn->params->len; i++)
     {
         Variable *param = fn->params->data[i];
-        if (param->cty->size == 1)
-        {
-            fprintf(output_file_g, "  mov %d[rbp], %s\n", param->stack_offset, param_reg8_g[i]);
-        }
-        else
-        {
-            fprintf(output_file_g, "  mov %d[rbp], %s\n", param->stack_offset, param_reg64_g[i]);
-        }
+        store_parameters_to_stack(i, param->stack_offset, param->cty->size);
     }
 
     for (size_t i = 0; i < fn->stmts->len; i++)
@@ -284,16 +280,7 @@ static void gen_expr(Expr *expr)
         gen_lvalue(expr->lhs);
         push_reg("rax");
         gen_expr(expr->rhs);
-        pop_reg("rdi");
-        if (expr->lhs->cty->size == 1)
-        {
-
-            fprintf(output_file_g, "  mov [rdi], al\n");
-        }
-        else
-        {
-            fprintf(output_file_g, "  mov [rdi], rax\n");
-        }
+        store(expr->cty);
         break;
     case EX_CONDITION:
     {
@@ -503,6 +490,10 @@ static void gen_load(CType *cty)
     {
         fprintf(output_file_g, "  movsx rax, BYTE PTR [rax]\n");
     }
+    else if (cty->size == 4)
+    {
+        fprintf(output_file_g, "  movsxd rax, DWORD PTR [rax]\n");
+    }
     else
     {
         fprintf(output_file_g, "  mov rax, [rax]\n");
@@ -516,4 +507,52 @@ static void push_reg(char *reg)
 static void pop_reg(char *reg)
 {
     fprintf(output_file_g, "  pop %s\n", reg);
+}
+
+static void store_parameters_to_stack(size_t reg_num, int stack_offset, size_t size)
+{
+    char *reg;
+    switch (size)
+    {
+    case 1:
+        reg = param_reg8_g[reg_num];
+        break;
+    case 4:
+        reg = param_reg32_g[reg_num];
+        break;
+    case 8:
+        reg = param_reg64_g[reg_num];
+        break;
+    default:
+        fprintf(stderr, "not allowed such a type-size in store-param semantics");
+        exit(1);
+        break;
+    }
+
+    fprintf(output_file_g, "  mov %d[rbp], %s\n", stack_offset, reg);
+}
+
+static void store(CType *cty)
+{
+    pop_reg("rdi");
+    char *src_reg;
+
+    switch (cty->size)
+    {
+    case 1:
+        src_reg = "al";
+        break;
+    case 4:
+        src_reg = "eax";
+        break;
+    case 8:
+        src_reg = "rax";
+        break;
+    default:
+        fprintf(stderr, "not allowed such a type-size in store semantics");
+        exit(1);
+        break;
+    }
+
+    fprintf(output_file_g, "  mov [rdi], %s\n", src_reg);
 }

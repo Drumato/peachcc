@@ -1,5 +1,22 @@
 #include "peachcc.h"
 
+// 入力されたCプログラムの中身
+char *c_program_g;
+// 現在のトークンを指す
+// パーサ内部でしか用いられず，最終的にfreeする．
+Token *cur_g;
+// パーサで用いる
+int str_id_g;
+// パース時にスタックオフセットを決定するために使用
+// 関数をパースする毎に，0に初期化する必要がある
+size_t total_stack_size_in_fn_g;
+
+// コンパイルオプションを扱う構造体．
+// main関数でコマンドラインオプションのパースが実行され，適切な値が格納されている．
+CompileOption *peachcc_opt_g;
+
+Map *global_variables_g;
+
 static int read_file(char *file_path, char **buf);
 static bool parse_cmd_args(int argc, char **argv, CompileOption **cmd_opt);
 
@@ -9,7 +26,7 @@ int main(int argc, char **argv)
 
     if (!parse_cmd_args(argc, argv, &peachcc_opt_g))
     {
-        fprintf(stderr, "usage: ./peachcc [-d]<file-name>\n");
+        fprintf(stderr, "usage: ./peachcc [-d] <file-name>\n");
         exit(1);
     }
 

@@ -1,4 +1,5 @@
 #pragma once
+
 #include <assert.h>
 #include <ctype.h>
 #include <fcntl.h>
@@ -408,18 +409,18 @@ void dump_ast(TranslationUnit *translation_unit);
 void dump_ctype(CType *cty);
 
 // 入力されたCプログラムの中身
-char *c_program_g;
+extern char *c_program_g;
 // 現在のトークンを指す
 // パーサ内部でしか用いられず，最終的にfreeする．
-Token *cur_g;
+extern Token *cur_g;
 // パーサで用いる
-int str_id_g;
+extern int str_id_g;
 // パース時にスタックオフセットを決定するために使用
 // 関数をパースする毎に，0に初期化する必要がある
-size_t total_stack_size_in_fn_g;
+extern size_t total_stack_size_in_fn_g;
 
 // コンパイルオプションを扱う構造体．
 // main関数でコマンドラインオプションのパースが実行され，適切な値が格納されている．
-CompileOption *peachcc_opt_g;
+extern CompileOption *peachcc_opt_g;
 
-Map *global_variables_g;
+extern Map *global_variables_g;

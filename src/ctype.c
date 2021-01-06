@@ -11,7 +11,7 @@ static CType *new_ctype(CTypeKind k, size_t size, int align)
 
 CType *new_int()
 {
-    return new_ctype(TY_INT, 8, 8);
+    return new_ctype(TY_INT, 4, 4);
 }
 CType *new_char()
 {

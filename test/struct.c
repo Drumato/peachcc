@@ -33,7 +33,7 @@ int case1()
         int b;
     } x[3];
 
-    assert(1, 48, sizeof(x));
+    assert(1, 24, sizeof(x));
 
     x[0].a = 3;
     x[1].b = 5;
@@ -86,7 +86,7 @@ int case4()
         int b;
     } x;
     struct t y;
-    assert(4, 16, sizeof(y));
+    assert(4, 8, sizeof(y));
     return 0;
 }
 
