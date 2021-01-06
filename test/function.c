@@ -45,6 +45,10 @@ static int sub_char(char a, char b, char c)
 {
     return a - b - c;
 }
+static int sub_long(long a, long b, long c)
+{
+    return a - b - c;
+}
 
 static int fib(int x)
 {
@@ -94,6 +98,11 @@ int case8()
     assert(8, 1, sub_char(7, 3, 3));
     return 0;
 }
+int case9()
+{
+    assert(8, 1, sub_long(7, 3, 3));
+    return 0;
+}
 
 int main()
 {
@@ -105,6 +114,7 @@ int main()
     case6();
     case7();
     case8();
+    case9();
 
     printf("function.c OK\n\n");
 

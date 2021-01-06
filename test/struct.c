@@ -144,6 +144,15 @@ int case8()
     assert(8, 3, x.a);
     return 0;
 }
+void case9()
+{
+    struct
+    {
+        char a;
+        long b;
+    } x;
+    assert(9, 16, sizeof(x));
+}
 
 int main()
 {
@@ -157,6 +166,7 @@ int main()
     case6();
     case7();
     case8();
+    case9();
 
     printf("struct.c OK\n\n");
     return 0;

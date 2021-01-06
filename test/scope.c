@@ -1,22 +1,15 @@
-int case_id_g;
-
-int assert(int expected, int actual)
+int assert(int case_id, int expected, int actual)
 {
-    if (expected == actual)
+    if (expected != actual)
     {
-        printf("cases[%d] => %d\n", case_id_g, actual);
-        case_id_g = case_id_g + 1;
-    }
-    else
-    {
-        printf("cases[%d] => %d expected but got %d\n", case_id_g, expected, actual);
+        printf("case%d() => %d expected but got %d\n", case_id, expected, actual);
         exit(1);
     }
 
     return 0;
 }
 
-int main()
+int case1()
 {
     int x;
     x = 2;
@@ -24,8 +17,12 @@ int main()
         int x;
         x = 3;
     }
-    assert(2, x);
+    assert(1, 2, x);
 
+    return 0;
+}
+int case2()
+{
     int y;
     y = 2;
     {
@@ -37,14 +34,26 @@ int main()
             y = 4;
         }
     }
-    assert(2, y);
+    assert(2, 2, y);
 
+    return 0;
+}
+int case3()
+{
     int z;
     z = 2;
     {
         z = 3;
     }
-    assert(3, z);
+    assert(3, 3, z);
+
+    return 0;
+}
+int main()
+{
+    case1();
+    case2();
+    case3();
 
     printf("scope.c OK\n\n");
     return 0;

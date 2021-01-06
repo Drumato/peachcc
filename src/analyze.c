@@ -9,6 +9,7 @@ static void walk_fn(Function *f);
 
 static void walk_stmt(Stmt *s);
 static CType *walk_expr(Expr **e);
+static bool is_integer(CType *cty);
 
 void analyze(TranslationUnit *translation_unit)
 {
@@ -37,16 +38,20 @@ static void walk_fn(Function *f)
     Variable *lv;
     f->stack_size = align_to(f->stack_size, 16);
     int offset = f->stack_size;
-    for (size_t i = 0; i < f->scope->variables->keys->len; i++)
+    Scope **sc = &f->scope;
+    for (; *sc != NULL; *sc = (*sc)->inner)
     {
-        lv = f->scope->variables->vals->data[i];
-        assert(lv);
-        assert(lv->cty);
-        assert(lv->str);
+        for (size_t i = 0; i < (*sc)->variables->keys->len; i++)
+        {
+            lv = (*sc)->variables->vals->data[i];
+            assert(lv);
+            assert(lv->cty);
+            assert(lv->str);
 
-        lv->stack_offset = -offset;
-        offset = offset - lv->cty->size;
-        // アラインできていない、するべき？
+            lv->stack_offset = -offset;
+            offset = offset - lv->cty->size;
+            // アラインできていない、するべき？
+        }
     }
 
     for (size_t i = 0; i < f->stmts->len; i++)
@@ -220,7 +225,7 @@ static CType *walk_expr(Expr **e)
         CType *lhs_type = walk_expr(&(*e)->lhs);
         CType *rhs_type = walk_expr(&(*e)->rhs);
         (*e)->cty = lhs_type;
-        if (lhs_type->kind == TY_INT && rhs_type->kind == TY_INT)
+        if (is_integer(lhs_type) && is_integer(rhs_type))
         {
             return lhs_type;
         }
@@ -253,14 +258,14 @@ static CType *walk_expr(Expr **e)
         CType *lhs_type = walk_expr(&(*e)->lhs);
         CType *rhs_type = walk_expr(&(*e)->rhs);
         (*e)->cty = lhs_type;
-        if ((lhs_type->kind == TY_INT && rhs_type->kind == TY_INT) || (lhs_type->kind == TY_CHAR && rhs_type->kind == TY_CHAR))
+        if (is_integer(lhs_type) && is_integer(rhs_type))
         {
             return lhs_type;
         }
 
         // C言語において `-` はポインタについてオーバーロードされているので，その挙動を実現
         // ptr - integer の場合，+と同様に
-        if (lhs_type->base && rhs_type->kind == TY_INT)
+        if (lhs_type->base && is_integer(rhs_type))
         {
             (*e)->rhs = new_binop(EX_MUL, (*e)->rhs, new_integer_literal(lhs_type->base->size, (*e)->rhs->str, (*e)->rhs->line), (*e)->str, (*e)->line);
             return lhs_type;
@@ -345,4 +350,10 @@ static CType *walk_expr(Expr **e)
         error_at((*e)->str, (*e)->line, "cannot analyze from it");
         return NULL;
     }
+}
+
+static bool is_integer(CType *cty)
+{
+    CTypeKind k = cty->kind;
+    return k == TY_CHAR || k == TY_INT || k == TY_LONG;
 }

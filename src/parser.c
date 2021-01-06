@@ -149,10 +149,18 @@ static void new_type_tag(Scope **sc, Token *tag, CType *cty)
     map_put((*sc)->tags, tag->str, cty);
 }
 
-bool is_typename(TokenList *tokens)
+bool start_typename(TokenList *tokens)
 {
     TokenKind cur = current_tk(tokens);
-    return cur == TK_INT || cur == TK_CHAR || cur == TK_STRUCT || cur == TK_VOID;
+    TokenKind typenames[] = {TK_INT, TK_CHAR, TK_STRUCT, TK_LONG, TK_VOID};
+    for (size_t i = 0; i < 5; i++)
+    {
+        if (cur == typenames[i])
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 // "static"
@@ -242,7 +250,7 @@ DeclarationSpecifier *declaration_specifiers(TokenList *tokens)
 
     while (true)
     {
-        if (is_typename(tokens))
+        if (start_typename(tokens))
         {
             CType *ty = type_specifier(tokens);
             decl_spec->cty = ty;
@@ -396,6 +404,11 @@ static CType *type_specifier(TokenList *tokens)
     {
         expect(tokens, TK_CHAR);
         return new_char();
+    }
+    case TK_LONG:
+    {
+        expect(tokens, TK_LONG);
+        return new_long();
     }
     case TK_VOID:
     {
@@ -902,7 +915,7 @@ static Vector *block_item_list(TokenList *tokens)
 
     while (!eatable(tokens, TK_RBRACE))
     {
-        if (is_typename(tokens))
+        if (start_typename(tokens))
         {
             Decl *decl = declaration(tokens);
             // empty declarationの場合は無視

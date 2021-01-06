@@ -169,6 +169,12 @@ int case19()
 void case20()
 {
     void *x;
+    assert(20, 8, sizeof(x));
+}
+void case21()
+{
+    long x;
+    assert(21, 8, sizeof(x));
 }
 
 int main()
@@ -193,6 +199,7 @@ int main()
     case18();
     case19();
     case20();
+    case21();
 
     printf("variable.c OK\n\n");
     return 0;

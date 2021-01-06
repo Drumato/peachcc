@@ -13,6 +13,10 @@ CType *new_int()
 {
     return new_ctype(TY_INT, 4, 4);
 }
+CType *new_long()
+{
+    return new_ctype(TY_LONG, 8, 8);
+}
 CType *new_char()
 {
     return new_ctype(TY_CHAR, 1, 1);
@@ -31,7 +35,6 @@ CType *new_array(CType *base, int array_len)
 {
     CType *array = new_ctype(TY_ARRAY, base->size * array_len, base->align);
     array->base = base;
-    array->size = base->size * array_len;
     array->array_len = array_len;
     return array;
 }
@@ -49,6 +52,7 @@ CType *new_struct(Map *members)
             st->align = mem->cty->align;
         }
     }
+    st->size = align_to(st->size, st->align);
     st->members = members;
 
     return st;

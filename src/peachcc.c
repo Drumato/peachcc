@@ -43,14 +43,14 @@ int main(int argc, char **argv)
 
     TranslationUnit *program = parse(tokens);
 
-    if (peachcc_opt_g->debug)
-    {
-        dump_ast(program);
-    }
-
     // ASTへの型付け，簡素な型検査を行い，変数をスタックに割り当てる
     // ASTの各メンバがNULLになっていないかどうかのチェックも行う．
     analyze(program);
+    if (peachcc_opt_g->debug)
+    {
+        fprintf(stderr, "dump ast(after translated)\n");
+        dump_ast(program);
+    }
 
     // アセンブリの書き込み先のopen
     FILE *output_file;

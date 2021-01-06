@@ -110,6 +110,7 @@ enum TokenKind
     TK_STATIC,          // "static"
     TK_EXTERN,          // "extern"
     TK_STRUCT,          // "struct"
+    TK_LONG,            // "long"
     TK_EOF,             // 入力の終わり
 };
 typedef enum TokenKind TokenKind;
@@ -151,6 +152,7 @@ void progress(TokenList *tokens);
 enum CTypeKind
 {
     TY_INT,
+    TY_LONG,
     TY_CHAR,
     TY_VOID,
     TY_PTR,
@@ -188,6 +190,7 @@ struct CType
 };
 
 CType *new_int();
+CType *new_long();
 CType *new_char();
 CType *new_void();
 CType *new_ptr(CType *base);

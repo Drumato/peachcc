@@ -48,14 +48,14 @@ Expr *new_string_literal(char *contents, char *str, size_t line_num)
     e->copied_str = calloc(strlen(contents), sizeof(char));
     strncpy(e->copied_str, contents, strlen(contents));
     e->copied_str[strlen(contents)] = 0;
-    e->length = strlen(contents);
+    e->length = strlen(contents) + 1;
     e->id = str_id_g;
 
     // グローバル変数としても登録する
     Variable *glob_var = calloc(1, sizeof(Variable));
 
     // \0が挿入されるので，+1
-    glob_var->cty = new_array(new_char(), strlen(contents) + 1);
+    glob_var->cty = new_array(new_char(), strlen(e->copied_str) + 1);
     glob_var->init_data = e->copied_str;
     char *buf = calloc(20, sizeof(char));
     sprintf(buf, ".str%d", str_id_g++);
