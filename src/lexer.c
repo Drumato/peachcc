@@ -107,12 +107,17 @@ void tokenize(TokenList *tokens, char *p)
             if (*p == '0' && isdigit(*(p + 1)))
             {
                 // 8進数
-                value = strtol(p, &p, 8);
+                value = strtol(p + 1, &p, 8);
+            }
+            else if (*p == '0' && *(p + 1) == 'b' && isdigit(*(p + 2)))
+            {
+                // 2進数
+                value = strtol(p + 2, &p, 2);
             }
             else if (*p == '0' && *(p + 1) == 'x' && isdigit(*(p + 2)))
             {
                 // 16進数
-                value = strtol(p, &p, 16);
+                value = strtol(p + 2, &p, 16);
             }
             else
             {

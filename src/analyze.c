@@ -202,17 +202,26 @@ static CType *walk_expr(Expr **e)
         return ptr;
     }
     case EX_UNARY_PLUS:
+    {
         assert((*e)->unary_op);
-        (*e)->cty = new_int();
+        CType *unary_ty = walk_expr(&(*e)->unary_op);
+        (*e)->cty = unary_ty;
         return (*e)->cty;
+    }
     case EX_UNARY_NOT:
+    {
         assert((*e)->unary_op);
-        (*e)->cty = new_int();
+        CType *unary_ty = walk_expr(&(*e)->unary_op);
+        (*e)->cty = unary_ty;
         return (*e)->cty;
+    }
     case EX_UNARY_MINUS:
+    {
         assert((*e)->unary_op);
-        (*e)->cty = new_int();
+        CType *unary_ty = walk_expr(&(*e)->unary_op);
+        (*e)->cty = unary_ty;
         return (*e)->cty;
+    }
     case EX_UNARY_DEREF:
     {
         assert((*e)->unary_op);
@@ -323,10 +332,11 @@ static CType *walk_expr(Expr **e)
         assert((*e)->rhs);
         assert((*e)->cond);
 
+        walk_expr(&(*e)->cond);
         CType *lhs_type = walk_expr(&(*e)->lhs);
         walk_expr(&(*e)->rhs);
-        walk_expr(&(*e)->cond);
 
+        (*e)->cty = lhs_type;
         return lhs_type;
     }
     case EX_MEMBER_ACCESS:

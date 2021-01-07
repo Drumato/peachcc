@@ -15,6 +15,7 @@ void case0()
     assert(0, 42, 42);
     assert(0, 13, 015);
     assert(0, 64, 0x40);
+    assert(0, 15, 0b1111);
 }
 void case1()
 {
