@@ -159,6 +159,54 @@ static CType *walk_expr(Expr **e)
         (*e)->var = v;
         return v->cty;
     }
+    case EX_PREF_INCREMENT:
+    {
+        // ++x は単に x = x + 1として良い
+        CType *var_ty = walk_expr(&(*e)->unary_op);
+        Expr *one = new_integer_literal(1, (*e)->str, (*e)->line);
+        Expr *plus = new_binop(EX_ADD, (*e)->unary_op, one, (*e)->str, (*e)->line);
+        *e = new_binop(EX_ASSIGN, (*e)->unary_op, plus, (*e)->str, (*e)->line);
+        (*e)->cty = var_ty;
+        return var_ty;
+    }
+    case EX_PREF_DECREMENT:
+    {
+        // --x は単に x = x - 1として良い
+        CType *var_ty = walk_expr(&(*e)->unary_op);
+        Expr *one = new_integer_literal(1, (*e)->str, (*e)->line);
+        Expr *minus = new_binop(EX_SUB, (*e)->unary_op, one, (*e)->str, (*e)->line);
+        *e = new_binop(EX_ASSIGN, (*e)->unary_op, minus, (*e)->str, (*e)->line);
+        (*e)->cty = var_ty;
+        return var_ty;
+    }
+    case EX_SUFF_INCREMENT:
+    {
+        // i++ は(i = i + 1) - 1という式として見れる
+        CType *var_ty = walk_expr(&(*e)->unary_op);
+        Expr *one = new_integer_literal(1, (*e)->str, (*e)->line);
+        one->cty = new_int();
+        Expr *plus = new_binop(EX_ADD, (*e)->unary_op, one, (*e)->str, (*e)->line);
+        plus->cty = var_ty;
+        Expr *assign = new_binop(EX_ASSIGN, (*e)->unary_op, plus, (*e)->str, (*e)->line);
+        assign->cty = var_ty;
+        *e = new_binop(EX_SUB, assign, one, (*e)->str, (*e)->line);
+        (*e)->cty = var_ty;
+        return var_ty;
+    }
+    case EX_SUFF_DECREMENT:
+    {
+        // i-- は (i = i - 1) + 1という式として見れる
+        CType *var_ty = walk_expr(&(*e)->unary_op);
+        Expr *one = new_integer_literal(1, (*e)->str, (*e)->line);
+        one->cty = new_int();
+        Expr *minus = new_binop(EX_SUB, (*e)->unary_op, one, (*e)->str, (*e)->line);
+        minus->cty = var_ty;
+        Expr *assign = new_binop(EX_ASSIGN, (*e)->unary_op, minus, (*e)->str, (*e)->line);
+        assign->cty = var_ty;
+        *e = new_binop(EX_ADD, assign, one, (*e)->str, (*e)->line);
+        (*e)->cty = var_ty;
+        return var_ty;
+    }
     case EX_UNARY_SIZEOF:
     {
         CType *cty = walk_expr(&(*e)->unary_op);

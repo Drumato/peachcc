@@ -200,6 +200,26 @@ static void dump_expr(Expr *e)
         fprintf(stderr, ")");
         break;
     }
+    case EX_PREF_INCREMENT:
+        fprintf(stderr, "PrefixIncrement(");
+        dump_expr(e->unary_op);
+        fprintf(stderr, ")");
+        break;
+    case EX_PREF_DECREMENT:
+        fprintf(stderr, "PrefixDecrement(");
+        dump_expr(e->unary_op);
+        fprintf(stderr, ")");
+        break;
+    case EX_SUFF_INCREMENT:
+        fprintf(stderr, "SuffixIncrement(");
+        dump_expr(e->unary_op);
+        fprintf(stderr, ")");
+        break;
+    case EX_SUFF_DECREMENT:
+        fprintf(stderr, "SuffixDecrement(");
+        dump_expr(e->unary_op);
+        fprintf(stderr, ")");
+        break;
     case EX_UNARY_SIZEOF:
         fprintf(stderr, "SizeofExpr(");
         dump_expr(e->unary_op);

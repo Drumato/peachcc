@@ -230,7 +230,11 @@ typedef enum
     // sizeof 演算子
     // analyze() によって変換されるので注意
     EX_UNARY_SIZEOF,
-    EX_UNARY_NOT, // 否定演算子
+    EX_UNARY_NOT,      // 否定演算子
+    EX_PREF_INCREMENT, // 前置インクリメント
+    EX_PREF_DECREMENT, // 前置デクリメント
+    EX_SUFF_INCREMENT, // 後置インクリメント
+    EX_SUFF_DECREMENT, // 後置デクリメント
 } ExprKind;
 
 typedef struct Expr Expr;

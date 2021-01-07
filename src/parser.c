@@ -629,7 +629,7 @@ static Expr *multiplication(TokenList *tokens)
 // ('+' | '-' | '*' | '&' | "sizeof" | '++' | '--' | '!') prefix_unary) | postfix_unary
 static Expr *prefix_unary(TokenList *tokens)
 {
-    Expr *e;
+    Expr *e = NULL;
     Token *loc = cur_g;
 
     if (try_eat(tokens, TK_PLUS))
@@ -646,15 +646,11 @@ static Expr *prefix_unary(TokenList *tokens)
         e = new_unop(EX_UNARY_NOT, prefix_unary(tokens), loc->str, loc->line);
     else if (try_eat(tokens, TK_INCREMENT))
     {
-        // ++x は単に x = x + 1として良い
-        e = prefix_unary(tokens);
-        e = new_binop(EX_ASSIGN, e, new_binop(EX_ADD, e, new_integer_literal(1, loc->str, loc->line), loc->str, loc->line), loc->str, loc->line);
+        e = new_unop(EX_PREF_INCREMENT, prefix_unary(tokens), loc->str, loc->line);
     }
     else if (try_eat(tokens, TK_DECREMENT))
     {
-        // --x は単に x = x - 1として良い
-        e = prefix_unary(tokens);
-        e = new_binop(EX_ASSIGN, e, new_binop(EX_SUB, e, new_integer_literal(1, loc->str, loc->line), loc->str, loc->line), loc->str, loc->line);
+        e = new_unop(EX_PREF_DECREMENT, prefix_unary(tokens), loc->str, loc->line);
     }
     else
         e = postfix_unary(tokens);
@@ -669,14 +665,12 @@ static Expr *postfix_unary(TokenList *tokens)
 
     if (try_eat(tokens, TK_INCREMENT))
     {
-        // i++ は (i = i + 1) - 1という式として見れる
-        e = new_binop(EX_SUB, new_binop(EX_ASSIGN, e, new_binop(EX_ADD, e, new_integer_literal(1, loc->str, loc->line), loc->str, loc->line), loc->str, loc->line), new_integer_literal(1, loc->str, loc->line), loc->str, loc->line);
+        e = new_unop(EX_SUFF_INCREMENT, e, loc->str, loc->line);
         return e;
     }
     else if (try_eat(tokens, TK_DECREMENT))
     {
-        // i++ は (i = i - 1) + 1という式として見れる
-        e = new_binop(EX_ADD, new_binop(EX_ASSIGN, e, new_binop(EX_SUB, e, new_integer_literal(1, loc->str, loc->line), loc->str, loc->line), loc->str, loc->line), new_integer_literal(1, loc->str, loc->line), loc->str, loc->line);
+        e = new_unop(EX_SUFF_DECREMENT, e, loc->str, loc->line);
         return e;
     }
 
