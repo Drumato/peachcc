@@ -57,8 +57,7 @@ Expr *new_string_literal(char *contents, char *str, size_t line_num)
     // \0が挿入されるので，+1
     glob_var->cty = new_array(new_char(), strlen(e->copied_str) + 1);
     glob_var->init_data = e->copied_str;
-    char *buf = calloc(20, sizeof(char));
-    sprintf(buf, ".str%d", str_id_g++);
+    char *buf = new_unique_label("str", str_id_g++);
     map_put(global_variables_g, buf, glob_var);
 
     return e;
@@ -106,4 +105,12 @@ Stmt *new_stmt(StmtKind k, char *loc, size_t line_num)
     s->line = line_num;
     s->loc = loc;
     return s;
+}
+
+// ユニークなラベルの作成
+char *new_unique_label(char *prefix, int id)
+{
+    char *buf = calloc(20, sizeof(char));
+    sprintf(buf, ".%s%d", prefix, id);
+    return buf;
 }

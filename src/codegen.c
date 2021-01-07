@@ -73,8 +73,8 @@ static void gen_fn(Function *fn)
         // translation-unit外部にも公開する
         fprintf(output_file_g, ".globl %s\n", fn->copied_name);
     }
-    fprintf(output_file_g, "%s:\n", fn->copied_name);
 
+    fprintf(output_file_g, "%s:\n", fn->copied_name);
     gen_function_prologue(fn->stack_size);
 
     // 引数がある分，スタックにstoreするコードを生成する
@@ -98,6 +98,15 @@ static void gen_stmt(Stmt *stmt)
     fprintf(output_file_g, ".loc 1 %zu\n", stmt->line);
     switch (stmt->kind)
     {
+    case ST_LABEL:
+        fprintf(output_file_g, "  # ST_LABEL\n");
+        fprintf(output_file_g, "  %s:\n", stmt->label);
+        gen_stmt(stmt->then);
+        break;
+    case ST_GOTO:
+        fprintf(output_file_g, "  # ST_GOTO\n");
+        fprintf(output_file_g, "  jmp %s\n", stmt->label);
+        break;
     case ST_EXPR:
         fprintf(output_file_g, "  # ST_EXPR\n");
         gen_expr(stmt->expr);

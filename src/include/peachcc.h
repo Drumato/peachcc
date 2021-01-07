@@ -112,6 +112,7 @@ enum TokenKind
     TK_EXTERN,          // "extern"
     TK_STRUCT,          // "struct"
     TK_LONG,            // "long"
+    TK_GOTO,            // "goto"
     TK_EOF,             // 入力の終わり
 };
 typedef enum TokenKind TokenKind;
@@ -133,7 +134,8 @@ struct Token
 };
 
 typedef Vector TokenList;
-
+// ユニークなラベルの生成
+char *new_unique_label(char *prefix, int id);
 // 整数トークンの作成
 Token *new_integer_token(char *str, int value, size_t length, size_t line_num);
 // 文字列トークンの作成
@@ -146,6 +148,10 @@ Token *new_token(TokenKind kind, char *str, size_t length, size_t line_num);
 Token *current_token(TokenList *tokens);
 // リスト中のposが指す現在のトークンの種類を見る
 TokenKind current_tk(TokenList *tokens);
+// リスト中のpos+1が指す現在の要素を見る
+Token *next_token(TokenList *tokens);
+// リスト中のpos+1が指す現在のトークンの種類を見る
+TokenKind next_tk(TokenList *tokens);
 // トークンを読みすすめる
 void progress(TokenList *tokens);
 
@@ -292,6 +298,8 @@ enum StmtKind
     ST_FOR,      // for statement
     ST_COMPOUND, // Compound statement
     ST_WHILE,    // while statement
+    ST_GOTO,     // goto statement
+    ST_LABEL,    // labeled statement
 };
 
 typedef enum StmtKind StmtKind;
@@ -314,6 +322,7 @@ struct Stmt
     char *loc;    // デバッグで使用
     size_t line;  // 行番号
     Scope *scope; // 変数スコープ
+    char *label;  // ラベル名
 };
 
 Stmt *new_stmt(StmtKind k, char *loc, size_t line_num);

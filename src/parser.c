@@ -6,6 +6,8 @@ static Stmt *return_stmt(TokenList *tokens);
 static Stmt *if_stmt(TokenList *tokens);
 static Stmt *for_stmt(TokenList *tokens);
 static Stmt *while_stmt(TokenList *tokens);
+static Stmt *labeled_stmt(TokenList *tokens);
+static Stmt *goto_stmt(TokenList *tokens);
 static Vector *block_item_list(TokenList *tokens);
 static Vector *compound_stmt(TokenList *tokens);
 static Stmt *statement(TokenList *tokens);
@@ -778,6 +780,8 @@ Stmt *statement(TokenList *tokens)
 {
     switch (cur_g->kind)
     {
+    case TK_GOTO:
+        return goto_stmt(tokens);
     case TK_RETURN:
         return return_stmt(tokens);
     case TK_LBRACE:
@@ -800,8 +804,53 @@ Stmt *statement(TokenList *tokens)
     case TK_WHILE:
         return while_stmt(tokens);
     default:
+    {
+        // labeled-statementの可能性がある
+        if (current_tk(tokens) == TK_IDENTIFIER && next_tk(tokens) == TK_COLON)
+        {
+            return labeled_stmt(tokens);
+        }
         return expr_stmt(tokens);
     }
+    }
+}
+static Stmt *labeled_stmt(TokenList *tokens)
+{
+    Token *loc = cur_g;
+    Stmt *s = new_stmt(ST_LABEL, loc->str, loc->line);
+
+    Token *id = expect_identifier(tokens);
+
+    char *label_name = calloc(id->length, sizeof(char));
+    strncpy(label_name, id->str, id->length);
+    label_name[id->length] = 0;
+
+    char *label = new_unique_label(label_name, 0);
+    s->label = label;
+    expect(tokens, TK_COLON);
+
+    s->then = statement(tokens);
+
+    return s;
+}
+
+// "goto" identifier ';'
+static Stmt *goto_stmt(TokenList *tokens)
+{
+    Token *loc = cur_g;
+    Stmt *s = new_stmt(ST_GOTO, loc->str, loc->line);
+    expect(tokens, TK_GOTO);
+
+    Token *id = expect_identifier(tokens);
+
+    char *label_name = calloc(id->length, sizeof(char));
+    strncpy(label_name, id->str, id->length);
+    label_name[id->length] = 0;
+
+    char *label = new_unique_label(label_name, 0);
+    s->label = label;
+    expect(tokens, TK_SEMICOLON);
+    return s;
 }
 
 // "return" expression ';'

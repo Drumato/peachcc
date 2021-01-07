@@ -48,6 +48,18 @@ Token *current_token(TokenList *tokens)
 {
     return (Token *)tokens->data[tokens->pos];
 }
+// 一つ先読み
+Token *next_token(TokenList *tokens)
+{
+    return (Token *)tokens->data[tokens->pos + 1];
+}
+// リスト中のpos+1が指す現在のトークンの種類を見る
+TokenKind next_tk(TokenList *tokens)
+{
+    Token *next;
+    next = next_token(tokens);
+    return next->kind;
+}
 // リスト中のposが指す現在のトークンの種類を見る
 TokenKind current_tk(TokenList *tokens)
 {

@@ -112,13 +112,18 @@ static void dump_stmt(Stmt *s, int indent)
     assert(s);
     switch (s->kind)
     {
+    case ST_LABEL:
+        fprintf(stderr, "%*sLabeledStmt(label: %s):\n", indent, " ", s->label);
+        dump_stmt(s->then, indent + 4);
+        break;
+    case ST_GOTO:
+        fprintf(stderr, "%*sGotoStmt(label: %s)\n", indent, " ", s->label);
+        break;
     case ST_WHILE:
         fprintf(stderr, "%*sWhileStmt(expr: ", indent, " ");
         dump_expr(s->cond);
         fprintf(stderr, ")\n");
-
         dump_stmt(s->then, indent + 4);
-
         break;
     case ST_IF:
         fprintf(stderr, "%*sIfStmt(expr: ", indent, " ");

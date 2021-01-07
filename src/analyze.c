@@ -65,6 +65,14 @@ static void walk_stmt(Stmt *s)
     assert(s);
     switch (s->kind)
     {
+    case ST_LABEL:
+        assert(s->label);
+        assert(s->then);
+        walk_stmt(s->then);
+        break;
+    case ST_GOTO:
+        assert(s->label);
+        break;
     case ST_EXPR:
         assert(s->expr);
         walk_expr(&s->expr);

@@ -91,6 +91,48 @@ int case8()
     assert(8, 3, i);
     return 0;
 }
+int case9()
+{
+    int i;
+    i = 0;
+    goto a;
+a:
+    i++;
+b:
+    i++;
+c:
+    i++;
+    assert(9, 3, i);
+    return 0;
+}
+int case10()
+{
+    int i;
+    i = 0;
+    goto e;
+d:
+    i++;
+e:
+    i++;
+f:
+    i++;
+    assert(10, 2, i);
+    return 0;
+}
+int case11()
+{
+    int i;
+    i = 0;
+    goto i;
+g:
+    i++;
+h:
+    i++;
+i:
+    i++;
+    assert(11, 1, i);
+    return 0;
+}
 
 int main()
 {
@@ -102,6 +144,9 @@ int main()
     case6();
     case7();
     case8();
+    case9();
+    case10();
+    case11();
 
     printf("control.c OK\n\n");
     return 0;
