@@ -80,7 +80,7 @@ static void walk_stmt(Stmt *s)
         }
         break;
     case ST_FOR:
-
+        cur_scope_g = s->scope;
         if (s->init)
         {
             walk_expr(&s->init);
@@ -95,6 +95,8 @@ static void walk_stmt(Stmt *s)
         }
         assert(s->then);
         walk_stmt(s->then);
+
+        cur_scope_g = s->scope->outer;
         break;
     case ST_WHILE:
         assert(s->cond);

@@ -130,7 +130,7 @@ Token *expect_identifier(TokenList *tokens)
 }
 
 // 識別子をローカル変数のマップに登録する
-Variable *insert_localvar_to_fn_env(Scope **sc, Token *id, CType *cty)
+Variable *insert_localvar_to_env(Scope **sc, Token *id, CType *cty)
 {
     Variable *v;
     if ((v = (Variable *)map_get((*sc)->variables, id->str, id->length)) == NULL)
@@ -213,7 +213,7 @@ Vector *parameter_list(TokenList *tokens)
         }
 
         Decl *param = parameter_declaration(tokens);
-        Variable *param_v = insert_localvar_to_fn_env(&cur_scope_g, param->id, param->cty);
+        Variable *param_v = insert_localvar_to_env(&cur_scope_g, param->id, param->cty);
         vec_push(params, param_v);
 
         if (try_eat(tokens, TK_RPAREN))
@@ -869,8 +869,27 @@ static Stmt *for_stmt(TokenList *tokens)
     expect(tokens, TK_FOR);
     expect(tokens, TK_LPAREN);
     Stmt *s = new_stmt(ST_FOR, loc->str, loc->line);
+
+    // initをパースする前にスコープを一段深くする
+    Scope *scope = new_scope(&cur_scope_g);
+    cur_scope_g = scope;
+    s->scope = cur_scope_g;
+
     if (!try_eat(tokens, TK_SEMICOLON))
     {
+        if (start_typename(tokens))
+        {
+            // declarationをパースしてスコープに識別子を登録する．
+            // その後はtype_prefixパース後まで巻き戻して，expressionを呼ぶ
+            int cur_pos = tokens->pos;
+            Token *id = NULL;
+            DeclarationSpecifier *declspec = decl_spec(tokens, &id);
+            insert_localvar_to_env(&scope, id, declspec->cty);
+
+            tokens->pos = cur_pos;
+            type_specifier(tokens);
+        }
+
         s->init = expression(tokens);
         expect(tokens, TK_SEMICOLON);
     }
@@ -886,6 +905,8 @@ static Stmt *for_stmt(TokenList *tokens)
     }
 
     s->then = statement(tokens);
+
+    cur_scope_g = scope->outer;
 
     return s;
 }
@@ -933,7 +954,7 @@ static Vector *block_item_list(TokenList *tokens)
                 error_at(decl->id->str, decl->id->line, "not allowed declaration as void");
             }
 
-            insert_localvar_to_fn_env(&cur_scope_g, decl->id, decl->cty);
+            insert_localvar_to_env(&cur_scope_g, decl->id, decl->cty);
             continue;
         }
 

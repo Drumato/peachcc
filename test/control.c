@@ -70,6 +70,27 @@ int case6()
     assert(6, 10, i);
     return 0;
 }
+int case7()
+{
+    int res;
+    res = 0;
+    for (int i = 1; i <= 10; i++)
+        res = res + i;
+
+    assert(7, 55, res);
+    return 0;
+}
+int case8()
+{
+    int i;
+    i = 3;
+    int j;
+    j = 0;
+    for (int i = 0; i <= 10; i = i + 1)
+        j = j + i;
+    assert(8, 3, i);
+    return 0;
+}
 
 int main()
 {
@@ -79,6 +100,8 @@ int main()
     case4();
     case5();
     case6();
+    case7();
+    case8();
 
     printf("control.c OK\n\n");
     return 0;
