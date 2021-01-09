@@ -133,6 +133,58 @@ i:
     assert(11, 1, i);
     return 0;
 }
+int case12()
+{
+    int i;
+    i = 0;
+    for (; i < 10; i++)
+    {
+        if (i == 3)
+            break;
+    }
+    assert(12, 3, i);
+    return 0;
+}
+int case13()
+{
+    int i;
+    i = 0;
+    while (1)
+    {
+        if (i++ == 3)
+            break;
+    }
+    assert(13, 4, i);
+    return 0;
+}
+int case14()
+{
+    int i;
+    i = 0;
+    for (; i < 10; i++)
+    {
+        for (;;)
+            break;
+        if (i == 3)
+            break;
+    }
+    assert(14, 3, i);
+    return 0;
+}
+int case15()
+{
+    int i;
+    i = 0;
+    while (1)
+    {
+        while (1)
+            break;
+        if (i++ == 3)
+            break;
+    }
+    assert(15, 4, i);
+    return 0;
+}
 
 int main()
 {
@@ -147,6 +199,10 @@ int main()
     case9();
     case10();
     case11();
+    case12();
+    case13();
+    case14();
+    case15();
 
     printf("control.c OK\n\n");
     return 0;

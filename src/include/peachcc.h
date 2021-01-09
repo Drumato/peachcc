@@ -113,6 +113,7 @@ enum TokenKind
     TK_STRUCT,          // "struct"
     TK_LONG,            // "long"
     TK_GOTO,            // "goto"
+    TK_BREAK,           // "break"
     TK_EOF,             // 入力の終わり
 };
 typedef enum TokenKind TokenKind;
@@ -294,6 +295,7 @@ enum StmtKind
 {
     ST_EXPR,     // Expression statement
     ST_RETURN,   // return statement
+    ST_BREAK,    // break statement
     ST_IF,       // if statement
     ST_FOR,      // for statement
     ST_COMPOUND, // Compound statement
@@ -433,7 +435,7 @@ extern char *c_program_g;
 // パーサ内部でしか用いられず，最終的にfreeする．
 extern Token *cur_g;
 // パーサで用いる
-extern int str_id_g;
+extern int label_id_g;
 // パース時にスタックオフセットを決定するために使用
 // 関数をパースする毎に，0に初期化する必要がある
 extern size_t total_stack_size_in_fn_g;

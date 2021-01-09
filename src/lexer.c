@@ -175,12 +175,13 @@ static Token *c_keyword(char *ptr)
     char *keywords[] = {
         "return", "if", "else", "for", "while",
         "int", "sizeof", "char", "static", "extern",
-        "struct", "void", "long", "short",
-        "goto", NULL};
+        "struct", "void", "long", "short", "goto",
+        "break", NULL};
     TokenKind kinds[] = {
         TK_RETURN, TK_IF, TK_ELSE, TK_FOR, TK_WHILE,
         TK_INT, TK_SIZEOF, TK_CHAR, TK_STATIC, TK_EXTERN,
-        TK_STRUCT, TK_VOID, TK_LONG, TK_SHORT, TK_GOTO};
+        TK_STRUCT, TK_VOID, TK_LONG, TK_SHORT, TK_GOTO,
+        TK_BREAK};
     // 必ずkeywords[i] != NULLと比較すること．
     // kindsとkeywordsには要素数の差がある(len(keywords == len(kinds) - 1))
 

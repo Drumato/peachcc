@@ -112,6 +112,9 @@ static void dump_stmt(Stmt *s, int indent)
     assert(s);
     switch (s->kind)
     {
+    case ST_BREAK:
+        fprintf(stderr, "%*sBreakStmt(label: %s):\n", indent, " ", s->label);
+        break;
     case ST_LABEL:
         fprintf(stderr, "%*sLabeledStmt(label: %s):\n", indent, " ", s->label);
         dump_stmt(s->then, indent + 4);

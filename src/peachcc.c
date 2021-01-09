@@ -6,7 +6,7 @@ char *c_program_g;
 // パーサ内部でしか用いられず，最終的にfreeする．
 Token *cur_g;
 // パーサで用いる
-int str_id_g;
+int label_id_g;
 // パース時にスタックオフセットを決定するために使用
 // 関数をパースする毎に，0に初期化する必要がある
 size_t total_stack_size_in_fn_g;

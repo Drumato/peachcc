@@ -8,6 +8,7 @@ static Stmt *for_stmt(TokenList *tokens);
 static Stmt *while_stmt(TokenList *tokens);
 static Stmt *labeled_stmt(TokenList *tokens);
 static Stmt *goto_stmt(TokenList *tokens);
+static Stmt *break_stmt(TokenList *tokens);
 static Vector *block_item_list(TokenList *tokens);
 static Vector *compound_stmt(TokenList *tokens);
 static Stmt *statement(TokenList *tokens);
@@ -49,6 +50,8 @@ static Expr *ident_expr(TokenList *tokens, Token *ident_loc);
 static Expr *call_expr(TokenList *tokens, Expr *id);
 
 static Scope *cur_scope_g;
+// 現在のパーサのオフセットで，breakの飛び先となるラベルを持っておく
+static char *break_label_g;
 
 // 次のトークンが期待している種類のときには，
 // トークンを1つ読み進めて真を返す．
@@ -451,7 +454,7 @@ static Expr *assign(TokenList *tokens)
     Expr *e = conditional(tokens);
     if (try_eat(tokens, TK_ASSIGN))
     {
-        Token *loc = cur_g;
+        Token *loc = current_token(tokens);
         e = new_binop(EX_ASSIGN, e, assign(tokens), loc->str, loc->line);
     }
 
@@ -461,7 +464,7 @@ static Expr *assign(TokenList *tokens)
 // logor ('?' expression ':' conditinal)?
 static Expr *conditional(TokenList *tokens)
 {
-    Token *loc = cur_g;
+    Token *loc = current_token(tokens);
     Expr *e = logor(tokens);
     if (!try_eat(tokens, TK_QUESTION))
     {
@@ -481,7 +484,7 @@ static Expr *logor(TokenList *tokens)
     Expr *e = logand(tokens);
     for (;;)
     {
-        Token *loc = cur_g;
+        Token *loc = current_token(tokens);
         if (!try_eat(tokens, TK_LOGOR))
         {
             break;
@@ -496,7 +499,7 @@ static Expr *logand(TokenList *tokens)
     Expr *e = equality(tokens);
     for (;;)
     {
-        Token *loc = cur_g;
+        Token *loc = current_token(tokens);
         if (!try_eat(tokens, TK_LOGAND))
         {
             break;
@@ -513,7 +516,7 @@ static Expr *equality(TokenList *tokens)
 
     for (;;)
     {
-        Token *loc = cur_g;
+        Token *loc = current_token(tokens);
         // `==`
         if (try_eat(tokens, TK_EQ))
         {
@@ -540,7 +543,7 @@ static Expr *relation(TokenList *tokens)
 
     for (;;)
     {
-        Token *loc = cur_g;
+        Token *loc = current_token(tokens);
         // `<`
         if (try_eat(tokens, TK_LE))
         {
@@ -576,7 +579,7 @@ static Expr *addition(TokenList *tokens)
 
     for (;;)
     {
-        Token *loc = cur_g;
+        Token *loc = current_token(tokens);
         // `+`
         if (try_eat(tokens, TK_PLUS))
         {
@@ -603,7 +606,7 @@ static Expr *multiplication(TokenList *tokens)
 
     for (;;)
     {
-        Token *loc = cur_g;
+        Token *loc = current_token(tokens);
         // `*`
         if (try_eat(tokens, TK_STAR))
         {
@@ -632,7 +635,7 @@ static Expr *multiplication(TokenList *tokens)
 static Expr *prefix_unary(TokenList *tokens)
 {
     Expr *e = NULL;
-    Token *loc = cur_g;
+    Token *loc = current_token(tokens);
 
     if (try_eat(tokens, TK_PLUS))
         e = new_unop(EX_UNARY_PLUS, prefix_unary(tokens), loc->str, loc->line);
@@ -719,7 +722,7 @@ static Expr *primary(TokenList *tokens)
     {
         return ident_expr(tokens, ident_loc);
     }
-    Token *loc = cur_g;
+    Token *loc = current_token(tokens);
     if (eatable(tokens, TK_INTEGER_LITERAL))
     {
         int value = expect_integer_literal(tokens);
@@ -778,10 +781,12 @@ static Expr *call_expr(TokenList *tokens, Expr *id)
 
 Stmt *statement(TokenList *tokens)
 {
-    switch (cur_g->kind)
+    switch (current_token(tokens)->kind)
     {
     case TK_GOTO:
         return goto_stmt(tokens);
+    case TK_BREAK:
+        return break_stmt(tokens);
     case TK_RETURN:
         return return_stmt(tokens);
     case TK_LBRACE:
@@ -816,7 +821,7 @@ Stmt *statement(TokenList *tokens)
 }
 static Stmt *labeled_stmt(TokenList *tokens)
 {
-    Token *loc = cur_g;
+    Token *loc = current_token(tokens);
     Stmt *s = new_stmt(ST_LABEL, loc->str, loc->line);
 
     Token *id = expect_identifier(tokens);
@@ -837,7 +842,7 @@ static Stmt *labeled_stmt(TokenList *tokens)
 // "goto" identifier ';'
 static Stmt *goto_stmt(TokenList *tokens)
 {
-    Token *loc = cur_g;
+    Token *loc = current_token(tokens);
     Stmt *s = new_stmt(ST_GOTO, loc->str, loc->line);
     expect(tokens, TK_GOTO);
 
@@ -853,10 +858,23 @@ static Stmt *goto_stmt(TokenList *tokens)
     return s;
 }
 
+// "break" ';'
+static Stmt *break_stmt(TokenList *tokens)
+{
+    Token *loc = current_token(tokens);
+    expect(tokens, TK_BREAK);
+
+    Stmt *s = new_stmt(ST_BREAK, loc->str, loc->line);
+    s->label = break_label_g;
+
+    expect(tokens, TK_SEMICOLON);
+    return s;
+}
+
 // "return" expression ';'
 static Stmt *return_stmt(TokenList *tokens)
 {
-    Token *loc = cur_g;
+    Token *loc = current_token(tokens);
     expect(tokens, TK_RETURN);
     Expr *e = expression(tokens);
     expect(tokens, TK_SEMICOLON);
@@ -868,23 +886,35 @@ static Stmt *return_stmt(TokenList *tokens)
 // "while" '(' expression ')' statement
 static Stmt *while_stmt(TokenList *tokens)
 {
-    Token *loc = cur_g;
+    Token *loc = current_token(tokens);
+    Stmt *s = new_stmt(ST_WHILE, loc->str, loc->line);
     expect(tokens, TK_WHILE);
     expect(tokens, TK_LPAREN);
     Expr *condition = expression(tokens);
     expect(tokens, TK_RPAREN);
 
+    // while文内部をパースする前にbreakラベルを作成
+    // while文内部でbreak-statementを見つけたら，"FORN"に飛ぶ
+
+    // このwhile自体もforやwhileの中身かもしれないので，breakラベルを持っておく
+    char *brk = break_label_g;
+
+    char *label = new_unique_label("WHILE", label_id_g++);
+    s->label = label;
+    break_label_g = s->label;
+
     Stmt *then = statement(tokens);
-    Stmt *s = new_stmt(ST_WHILE, loc->str, loc->line);
     s->cond = condition;
     s->then = then;
+
+    break_label_g = brk;
     return s;
 }
 
 // "if" '(' expression ')' statement ("else" statement)?
 static Stmt *if_stmt(TokenList *tokens)
 {
-    Token *loc = cur_g;
+    Token *loc = current_token(tokens);
     expect(tokens, TK_IF);
     expect(tokens, TK_LPAREN);
     Expr *condition = expression(tokens);
@@ -907,7 +937,7 @@ static Stmt *if_stmt(TokenList *tokens)
 // "for" '(' expression? ';' expression? ';' expression?')' statement
 static Stmt *for_stmt(TokenList *tokens)
 {
-    Token *loc = cur_g;
+    Token *loc = current_token(tokens);
 
     expect(tokens, TK_FOR);
     expect(tokens, TK_LPAREN);
@@ -917,6 +947,16 @@ static Stmt *for_stmt(TokenList *tokens)
     Scope *scope = new_scope(&cur_scope_g);
     cur_scope_g = scope;
     s->scope = cur_scope_g;
+
+    // for文内部をパースする前にbreakラベルを作成
+    // for文内部でbreak-statementを見つけたら，"FORN"に飛ぶ
+
+    // このfor自体もforやwhileの中身かもしれないので，breakラベルを持っておく
+    char *brk = break_label_g;
+
+    char *label = new_unique_label("FOR", label_id_g++);
+    s->label = label;
+    break_label_g = s->label;
 
     if (!try_eat(tokens, TK_SEMICOLON))
     {
@@ -950,6 +990,7 @@ static Stmt *for_stmt(TokenList *tokens)
     s->then = statement(tokens);
 
     cur_scope_g = scope->outer;
+    break_label_g = brk;
 
     return s;
 }
@@ -969,7 +1010,7 @@ Vector *compound_stmt(TokenList *tokens)
 // expression ';'
 static Stmt *expr_stmt(TokenList *tokens)
 {
-    Token *loc = cur_g;
+    Token *loc = current_token(tokens);
     Expr *e = expression(tokens);
     expect(tokens, TK_SEMICOLON);
     Stmt *s = new_stmt(ST_EXPR, loc->str, loc->line);
@@ -1011,6 +1052,7 @@ TranslationUnit *parse(TokenList *tokens)
     // 各ASTノードがトークンへのポインタを持っているので，cur_gのfreeは最後までしてはならない．
     cur_g = calloc(1, sizeof(Token));
     cur_g = current_token(tokens);
+    break_label_g = NULL;
 
     TranslationUnit *translation_unit = new_translation_unit();
     translation_unit->global_variables = new_map();

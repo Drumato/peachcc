@@ -123,12 +123,12 @@ static void gen_stmt(Stmt *stmt)
         fprintf(output_file_g, ".Lbegin%d:\n", label);
         gen_expr(stmt->cond);
         fprintf(output_file_g, "  cmp rax, 0\n");
-        fprintf(output_file_g, "  je .Lend%d\n", label);
+        fprintf(output_file_g, "  je %s\n", stmt->label);
 
         gen_stmt(stmt->then);
         fprintf(output_file_g, "  jmp .Lbegin%d\n", label);
 
-        fprintf(output_file_g, ".Lend%d:\n", label);
+        fprintf(output_file_g, "%s:\n", stmt->label);
         break;
     }
     case ST_FOR:
@@ -147,7 +147,7 @@ static void gen_stmt(Stmt *stmt)
         {
             gen_expr(stmt->cond);
             fprintf(output_file_g, "  cmp rax, 0\n");
-            fprintf(output_file_g, "  je .Lend%d\n", label);
+            fprintf(output_file_g, "  je %s\n", stmt->label);
         }
 
         gen_stmt(stmt->then);
@@ -156,7 +156,7 @@ static void gen_stmt(Stmt *stmt)
             gen_expr(stmt->inc);
         }
         fprintf(output_file_g, "  jmp .Lbegin%d\n", label);
-        fprintf(output_file_g, ".Lend%d:\n", label);
+        fprintf(output_file_g, "%s:\n", stmt->label);
         break;
     }
     case ST_IF:

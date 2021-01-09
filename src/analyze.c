@@ -7,7 +7,7 @@ static Scope *cur_scope_g;
 
 static void walk_fn(Function *f);
 
-static void walk_stmt(Stmt *s);
+static void walk_stmt(Stmt **s);
 static CType *walk_expr(Expr **e);
 static bool is_integer(CType *cty);
 
@@ -57,75 +57,79 @@ static void walk_fn(Function *f)
     for (size_t i = 0; i < f->stmts->len; i++)
     {
         Stmt *s = f->stmts->data[i];
-        walk_stmt(s);
+        walk_stmt(&s);
     }
 }
-static void walk_stmt(Stmt *s)
+static void walk_stmt(Stmt **s)
 {
-    assert(s);
-    switch (s->kind)
+    assert(*s);
+    switch ((*s)->kind)
     {
+    case ST_BREAK:
+        assert((*s)->label);
+        (*s)->kind = ST_GOTO;
+        break;
     case ST_LABEL:
-        assert(s->label);
-        assert(s->then);
-        walk_stmt(s->then);
+        assert((*s)->label);
+        assert((*s)->then);
+        walk_stmt(&(*s)->then);
         break;
     case ST_GOTO:
-        assert(s->label);
+        assert((*s)->label);
         break;
     case ST_EXPR:
-        assert(s->expr);
-        walk_expr(&s->expr);
+        assert((*s)->expr);
+        walk_expr(&(*s)->expr);
         break;
     case ST_IF:
-        assert(s->cond);
-        assert(s->then);
-        walk_expr(&s->cond);
-        walk_stmt(s->then);
-        if (s->els)
+        assert((*s)->cond);
+        assert((*s)->then);
+        walk_expr(&(*s)->cond);
+        walk_stmt(&(*s)->then);
+        if ((*s)->els)
         {
-            walk_stmt(s->els);
+            walk_stmt(&(*s)->els);
         }
         break;
     case ST_FOR:
-        cur_scope_g = s->scope;
-        if (s->init)
+        cur_scope_g = (*s)->scope;
+        if ((*s)->init)
         {
-            walk_expr(&s->init);
+            walk_expr(&(*s)->init);
         }
-        if (s->cond)
+        if ((*s)->cond)
         {
-            walk_expr(&s->cond);
+            walk_expr(&(*s)->cond);
         }
-        if (s->inc)
+        if ((*s)->inc)
         {
-            walk_expr(&s->inc);
+            walk_expr(&(*s)->inc);
         }
-        assert(s->then);
-        walk_stmt(s->then);
+        assert((*s)->then);
+        walk_stmt(&(*s)->then);
 
-        cur_scope_g = s->scope->outer;
+        cur_scope_g = (*s)->scope->outer;
         break;
     case ST_WHILE:
-        assert(s->cond);
-        assert(s->then);
-        walk_expr(&s->cond);
-        walk_stmt(s->then);
+        assert((*s)->cond);
+        assert((*s)->then);
+        walk_expr(&(*s)->cond);
+        walk_stmt(&(*s)->then);
         break;
     case ST_RETURN:
-        assert(s->expr);
-        walk_expr(&s->expr);
+        assert((*s)->expr);
+        walk_expr(&(*s)->expr);
         break;
     case ST_COMPOUND:
     {
-        assert(s->body);
-        cur_scope_g = s->scope;
-        for (size_t i = 0; i < s->body->len; i++)
+        assert((*s)->body);
+        cur_scope_g = (*s)->scope;
+        for (size_t i = 0; i < (*s)->body->len; i++)
         {
-            Stmt *child = (Stmt *)s->body->data[i];
-            walk_stmt(child);
+            Stmt *child = (Stmt *)(*s)->body->data[i];
+            walk_stmt(&child);
         }
-        cur_scope_g = s->scope->outer;
+        cur_scope_g = (*s)->scope->outer;
     }
     }
 }

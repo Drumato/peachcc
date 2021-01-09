@@ -49,7 +49,7 @@ Expr *new_string_literal(char *contents, char *str, size_t line_num)
     strncpy(e->copied_str, contents, strlen(contents));
     e->copied_str[strlen(contents)] = 0;
     e->length = strlen(contents) + 1;
-    e->id = str_id_g;
+    e->id = label_id_g;
 
     // グローバル変数としても登録する
     Variable *glob_var = calloc(1, sizeof(Variable));
@@ -57,7 +57,7 @@ Expr *new_string_literal(char *contents, char *str, size_t line_num)
     // \0が挿入されるので，+1
     glob_var->cty = new_array(new_char(), strlen(e->copied_str) + 1);
     glob_var->init_data = e->copied_str;
-    char *buf = new_unique_label("str", str_id_g++);
+    char *buf = new_unique_label("str", label_id_g++);
     map_put(global_variables_g, buf, glob_var);
 
     return e;
